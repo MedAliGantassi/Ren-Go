@@ -1,0 +1,424 @@
+# Ren&Go – Full Business Logic & Technical Specification (Detailed)
+
+## 1. Project Overview
+
+Ren&Go is a web-based platform designed to connect three main actors:
+
+* Clients (users who want to rent houses)
+* Fournisseurs (property owners)
+* Administrators (platform managers)
+
+The platform allows clients to browse properties, make reservations, pay for them, leave reviews, and manage their favorites. Fournisseurs can manage their properties and receive reservations. Administrators oversee the entire system.
+
+---
+
+## 2. Technical Architecture
+
+### Frontend
+
+* ReactJS
+* Handles UI/UX, forms, dashboards, and user interactions
+
+### Backend
+
+* Node.js with Express
+* REST API architecture
+* Handles business logic, authentication, and data processing
+
+### Database
+
+* MongoDB (NoSQL)
+* Stores users, properties, reservations, payments, reviews, etc.
+
+---
+
+## 3. User System (Role-Based)
+
+All users are stored in a single collection with role differentiation:
+
+### Roles:
+
+* CLIENT
+* FOURNISSEUR
+* ADMIN
+
+### Common Attributes:
+
+* id
+* name
+* email
+* password (hashed)
+* role
+* dateInscription
+* isActive (for account disabling)
+
+### Logic:
+
+* Authentication is required for most actions
+* Authorization is role-based (middleware checks role)
+* Admin can manage all users
+* No physical deletion → use "deactivate account"
+
+---
+
+## 4. Property (Maison) Management
+
+### Created by:
+
+* Fournisseur only
+
+### Attributes:
+
+* id
+* title
+* description
+* price
+* location
+* dateCreation
+* owner (Fournisseur)
+
+### Business Logic:
+
+* A fournisseur can create multiple properties
+* A property can be updated or deleted by:
+
+  * Its owner (Fournisseur)
+  * Admin
+* A property is NOT globally unavailable → availability depends on reservations
+
+---
+
+## 5. Availability System (Calendar-Based)
+
+### Important Change:
+
+Availability is NOT a boolean.
+
+### Structure:
+
+A property has multiple availability periods defined by:
+
+* dateDebut
+* dateFin
+
+### Logic:
+
+* Availability is computed dynamically based on:
+
+  * Existing reservations
+  * Dates requested by client
+* Multiple reservations allowed if dates do NOT overlap
+
+### Example:
+
+* Reservation A: 1–5 Jan
+* Reservation B: 10–15 Jan
+  ✔ Both valid
+
+---
+
+## 6. Reservation System (Core Logic)
+
+### Created by:
+
+* Client only
+
+### Attributes:
+
+* id
+* dateDebut
+* dateFin
+* dateReservation
+* status:
+
+  * EN_ATTENTE (pending)
+  * CONFIRMEE (confirmed)
+  * ANNULEE (cancelled)
+
+### Flow:
+
+#### Step 1: Create Reservation
+
+* Client selects property + dates
+* Backend checks:
+
+  * If dates are available
+* If yes:
+
+  * Reservation is created with status = EN_ATTENTE
+
+---
+
+### Step 2: Payment Window (72 hours)
+
+* Client has up to 72 hours to pay
+* During this time:
+
+  * Reservation remains pending
+
+---
+
+### Step 3: Payment
+
+* If payment succeeds:
+  → status becomes CONFIRMEE
+
+* If payment fails:
+  → status remains EN_ATTENTE
+
+---
+
+### Step 4: Automatic Cancellation
+
+If:
+
+* Reservation is still pending
+* AND 72 hours have passed
+
+Then:
+→ System automatically cancels it
+
+---
+
+### Step 5: Manual Cancellation (Client)
+
+Client can cancel ONLY if:
+
+* Less than 72 hours since reservation
+
+Else:
+→ Cancellation is refused
+
+---
+
+## 7. Payment System
+
+### Type:
+
+* Simulated payment (no real banking)
+
+### Attributes:
+
+* id
+* amount
+* date
+* status (SUCCESS / FAILED)
+
+### Logic:
+
+* One reservation → 0 or 1 payment
+* Payment occurs AFTER reservation
+* On success:
+  → Reservation confirmed
+* On failure:
+  → Reservation remains pending
+
+---
+
+## 8. Review System (Avis)
+
+### Purpose:
+
+* Allow rating and feedback after experience
+
+### Types:
+
+1. Client → rates property
+2. Fournisseur → rates client
+
+### Attributes:
+
+* id
+* note (1–5)
+* commentaire
+* date
+
+### Rules:
+
+* Only after reservation is completed
+* One review per reservation (recommended)
+
+### Advanced Logic:
+
+* If a client gets very low ratings repeatedly:
+  → Admin can suspend or deactivate account
+
+---
+
+## 9. Wishlist System (Favorites)
+
+### Purpose:
+
+* Client saves favorite properties
+
+### Structure:
+
+* Wishlist linked to one client
+* Contains multiple properties
+
+### Logic:
+
+* Add property to wishlist
+* Remove property from wishlist
+* No duplicates
+
+---
+
+## 10. Admin System
+
+### Capabilities:
+
+* Manage users:
+
+  * View all users
+  * Deactivate accounts
+* Manage properties:
+
+  * Delete any property
+* Monitor reservations
+* Moderate reviews
+
+---
+
+## 11. Automatic System (Timer)
+
+### Function:
+
+Runs periodically (e.g., every hour)
+
+### Responsibilities:
+
+* Check all pending reservations
+* If older than 72h:
+  → Cancel automatically
+
+### Implementation Example:
+
+* setInterval() in backend
+* Or cron job
+
+---
+
+## 12. Security & Middleware
+
+### Authentication:
+
+* JWT (JSON Web Token)
+
+### Middleware:
+
+* authMiddleware → verifies token
+* roleMiddleware → checks role access
+
+---
+
+## 13. API Design (High-Level)
+
+### Auth
+
+* POST /auth/register
+* POST /auth/login
+
+### Properties
+
+* POST /properties
+* GET /properties
+* PUT /properties/:id
+* DELETE /properties/:id
+
+### Reservations
+
+* POST /reservations
+* GET /reservations
+* DELETE /reservations/:id
+
+### Payment
+
+* POST /payments
+
+### Reviews
+
+* POST /reviews
+* GET /reviews
+
+### Wishlist
+
+* POST /wishlist
+* DELETE /wishlist/:id
+
+---
+
+## 14. Key Business Rules Summary
+
+* Reservation must be created before payment
+* Payment deadline = 72 hours
+* Auto cancellation after deadline
+* Availability based on dates (not boolean)
+* Multiple reservations allowed if no overlap
+* Reviews only after experience
+* Admin has full control
+* Users are role-based
+* Wishlist is client-only
+
+---
+
+## 15. Development Strategy
+
+### Phase 1:
+
+Authentication & Users
+
+### Phase 2:
+
+Property Management
+
+### Phase 3:
+
+Reservation Logic
+
+### Phase 4:
+
+Payment Simulation
+
+### Phase 5:
+
+Auto Cancellation System
+
+### Phase 6:
+
+Reviews & Wishlist
+
+---
+
+## 16. Conclusion
+
+This system models a realistic rental platform with:
+
+* Strong business logic
+* Clear separation of roles
+* Automated processes
+* Scalable architecture
+
+It is fully suitable for a PFE project and demonstrates:
+
+* Backend architecture skills
+* UML understanding
+* Real-world system design
+
+{
+  "name": "Ali",
+  "email": "ali@test.com",
+  "password": "123456"
+}
+
+===== GIT COMMANDS TO FIX PUSH ERROR =====
+
+cd G:\PFE\rengo
+
+git config user.email "MedAliGantassi@users.noreply.github.com"
+
+git commit --amend --reset-author --no-edit
+
+git push -u origin main --force
+
+===== END OF COMMANDS =====
