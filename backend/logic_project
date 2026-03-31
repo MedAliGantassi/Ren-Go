@@ -405,20 +405,5 @@ It is fully suitable for a PFE project and demonstrates:
 * UML understanding
 * Real-world system design
 
-{
-  "name": "Ali",
-  "email": "ali@test.com",
-  "password": "123456"
-}
 
-===== GIT COMMANDS TO FIX PUSH ERROR =====
-
-cd G:\PFE\rengo
-
-git config user.email "MedAliGantassi@users.noreply.github.com"
-
-git commit --amend --reset-author --no-edit
-
-git push -u origin main --force
-
-===== END OF COMMANDS =====
+I am currently starting the development phase of my PFE project "Ren&Go" (house rental platform), and I want to begin with the Property (Maison) module. Before generating code, please carefully understand the following updated business logic and constraints. 🧠 Core Business Logic Update (IMPORTANT) ⦁ Property availability is NOT stored as a boolean for booking logic. ⦁ Instead, availability is calculated dynamically based on reservations. ✔ Correct Logic: A property can have multiple reservations as long as their dates do NOT overlap. ❌ Incorrect Logic: Do NOT rely on a simple "disponible: true/false" to determine booking availability. ✔ Rule: To check availability: Two date ranges overlap if: If there is any overlapping reservation with status: ⦁ "EN_ATTENTE" or "CONFIRMEE" → the property is NOT available for those dates. 🏠 Property (Maison) Model Attributes: ⦁ id ⦁ titre ⦁ description ⦁ prix ⦁ localisation ⦁ images (array) ⦁ owner (Fournisseur) ⦁ isActive (boolean → only for visibility, NOT booking) 🔐 Access Rules ⦁ Only Fournisseur can create properties ⦁ Fournisseur can update/delete ONLY his own properties ⦁ Admin can delete any property ⦁ Client can only view properties 🎯 What I Need From You Please generate: 1. Mongoose Model (Property Schema) ⦁ Clean structure ⦁ Proper types ⦁ Reference to User (owner) 2. Controller Functions ⦁ createProperty() ⦁ getAllProperties() ⦁ getPropertyById() ⦁ updateProperty() ⦁ deleteProperty() Include: ⦁ Validation ⦁ Ownership check ⦁ Error handling 3. Routes (Express) ⦁ POST /properties ⦁ GET /properties ⦁ GET /properties/:id ⦁ PUT /properties/:id ⦁ DELETE /properties/:id 4. Middleware Integration ⦁ authMiddleware ⦁ roleMiddleware (FOURNISSEUR / ADMIN) ⚠️ Important Instructions ⦁ Follow clean architecture (controller / model / route separation) ⦁ Use async/await ⦁ Use try/catch ⦁ Keep code simple but professional ⦁ Add comments for clarity 🚀 Goal I want production-ready code for the Property module so I can integrate it later with reservation logic. Thank you.
