@@ -16,11 +16,11 @@ const router = express.Router();
 router.get('/', getAllProperties);
 router.get('/:id', getPropertyById);
 
-// Protected routes - FOURNISSEUR only
-router.post('/', protect, authorize('FOURNISSEUR'), createProperty);
-router.put('/:id', protect, authorize('FOURNISSEUR'), updateProperty);
+// Protected routes - PROPRIETAIRE only
+router.post('/', protect, authorize('PROPRIETAIRE'), createProperty);
+router.put('/:id', protect, authorize('PROPRIETAIRE'), updateProperty);
 
-// Protected routes - FOURNISSEUR or ADMIN can delete
-router.delete('/:id', protect, authorize('FOURNISSEUR', 'ADMIN'), deleteProperty);
+// Protected routes - PROPRIETAIRE or ADMIN can delete
+router.delete('/:id', protect, authorize('PROPRIETAIRE', 'ADMIN'), deleteProperty);
 
 module.exports = router;

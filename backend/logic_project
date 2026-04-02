@@ -407,3 +407,201 @@ It is fully suitable for a PFE project and demonstrates:
 
 
 I am currently starting the development phase of my PFE project "Ren&Go" (house rental platform), and I want to begin with the Property (Maison) module. Before generating code, please carefully understand the following updated business logic and constraints. 🧠 Core Business Logic Update (IMPORTANT) ⦁ Property availability is NOT stored as a boolean for booking logic. ⦁ Instead, availability is calculated dynamically based on reservations. ✔ Correct Logic: A property can have multiple reservations as long as their dates do NOT overlap. ❌ Incorrect Logic: Do NOT rely on a simple "disponible: true/false" to determine booking availability. ✔ Rule: To check availability: Two date ranges overlap if: If there is any overlapping reservation with status: ⦁ "EN_ATTENTE" or "CONFIRMEE" → the property is NOT available for those dates. 🏠 Property (Maison) Model Attributes: ⦁ id ⦁ titre ⦁ description ⦁ prix ⦁ localisation ⦁ images (array) ⦁ owner (Fournisseur) ⦁ isActive (boolean → only for visibility, NOT booking) 🔐 Access Rules ⦁ Only Fournisseur can create properties ⦁ Fournisseur can update/delete ONLY his own properties ⦁ Admin can delete any property ⦁ Client can only view properties 🎯 What I Need From You Please generate: 1. Mongoose Model (Property Schema) ⦁ Clean structure ⦁ Proper types ⦁ Reference to User (owner) 2. Controller Functions ⦁ createProperty() ⦁ getAllProperties() ⦁ getPropertyById() ⦁ updateProperty() ⦁ deleteProperty() Include: ⦁ Validation ⦁ Ownership check ⦁ Error handling 3. Routes (Express) ⦁ POST /properties ⦁ GET /properties ⦁ GET /properties/:id ⦁ PUT /properties/:id ⦁ DELETE /properties/:id 4. Middleware Integration ⦁ authMiddleware ⦁ roleMiddleware (FOURNISSEUR / ADMIN) ⚠️ Important Instructions ⦁ Follow clean architecture (controller / model / route separation) ⦁ Use async/await ⦁ Use try/catch ⦁ Keep code simple but professional ⦁ Add comments for clarity 🚀 Goal I want production-ready code for the Property module so I can integrate it later with reservation logic. Thank you.
+
+====================================================================
+=== POSTMAN TEST DATA - COPY FROM HERE ===========================
+====================================================================
+
+===== 1. REGISTER USER AS PROPRIETAIRE =====
+POST http://localhost:5000/api/auth/register
+Body → raw → JSON:
+
+{
+  "name": "Mohamed Proprietaire",
+  "email": "mohamed@proprietaire.com",
+  "password": "123456",
+  "role": "PROPRIETAIRE"
+}
+
+Response: Copy the "token" from response
+
+
+===== 2. REGISTER USER AS CLIENT =====
+POST http://localhost:5000/api/auth/register
+Body → raw → JSON:
+
+{
+  "name": "Ali Client",
+  "email": "ali@client.com",
+  "password": "123456",
+  "role": "CLIENT"
+}
+
+Response: Copy the "token" from response
+
+
+===== 3. CREATE PROPERTY (Use PROPRIETAIRE Token) =====
+POST http://localhost:5000/api/properties
+Headers:
+  Authorization: Bearer YOUR_PROPRIETAIRE_TOKEN_HERE
+
+Body → raw → JSON:
+
+{
+  "titre": "Villa Luxueuse au Bord de Mer",
+  "description": "Magnifique villa avec vue sur la mer, 4 chambres, piscine privée, jardin tropical. Idéal pour des vacances en famille.",
+  "prix": 250,
+  "localisation": "Hammamet, Tunisie",
+  "images": [
+    "https://example.com/villa1.jpg",
+    "https://example.com/villa2.jpg",
+    "https://example.com/villa3.jpg"
+  ]
+}
+
+Response: Copy the property "id" from response
+
+
+===== 4. CREATE ANOTHER PROPERTY =====
+POST http://localhost:5000/api/properties
+Headers:
+  Authorization: Bearer YOUR_PROPRIETAIRE_TOKEN_HERE
+
+Body → raw → JSON:
+
+{
+  "titre": "Appartement Moderne Centre Ville",
+  "description": "Appartement 2 chambres au cœur de la ville, proche des commerces et restaurants. Parking inclus.",
+  "prix": 120,
+  "localisation": "Sousse, Tunisie",
+  "images": [
+    "https://example.com/appart1.jpg",
+    "https://example.com/appart2.jpg"
+  ]
+}
+
+
+===== 5. GET ALL PROPERTIES (No Token Required) =====
+GET http://localhost:5000/api/properties
+
+No Body needed
+
+
+===== 6. GET PROPERTY BY ID (No Token Required) =====
+GET http://localhost:5000/api/properties/YOUR_PROPERTY_ID_HERE
+
+No Body needed
+
+
+===== 7. UPDATE PROPERTY (Use PROPRIETAIRE Token) =====
+PUT http://localhost:5000/api/properties/YOUR_PROPERTY_ID_HERE
+Headers:
+  Authorization: Bearer YOUR_PROPRIETAIRE_TOKEN_HERE
+
+Body → raw → JSON:
+
+{
+  "prix": 280,
+  "description": "Magnifique villa avec vue sur la mer, 4 chambres, piscine privée, jardin tropical. Prix mis à jour pour haute saison."
+}
+
+
+===== 8. CREATE RESERVATION (Use CLIENT Token) =====
+POST http://localhost:5000/api/reservations
+Headers:
+  Authorization: Bearer YOUR_CLIENT_TOKEN_HERE
+
+Body → raw → JSON:
+
+{
+  "property": "YOUR_PROPERTY_ID_HERE",
+  "dateDebut": "2026-05-15",
+  "dateFin": "2026-05-22",
+  "guests": 4
+}
+
+Response: Should show totalPrice calculated automatically
+
+
+===== 9. CREATE OVERLAPPING RESERVATION (Should FAIL) =====
+POST http://localhost:5000/api/reservations
+Headers:
+  Authorization: Bearer YOUR_CLIENT_TOKEN_HERE
+
+Body → raw → JSON:
+
+{
+  "property": "YOUR_PROPERTY_ID_HERE",
+  "dateDebut": "2026-05-18",
+  "dateFin": "2026-05-25",
+  "guests": 2
+}
+
+Response: Should return 409 error (overlap detected)
+
+
+===== 10. CREATE NON-OVERLAPPING RESERVATION (Should SUCCESS) =====
+POST http://localhost:5000/api/reservations
+Headers:
+  Authorization: Bearer YOUR_CLIENT_TOKEN_HERE
+
+Body → raw → JSON:
+
+{
+  "property": "YOUR_PROPERTY_ID_HERE",
+  "dateDebut": "2026-06-01",
+  "dateFin": "2026-06-07",
+  "guests": 3
+}
+
+Response: Should work (no overlap)
+
+
+===== 11. GET MY RESERVATIONS (Use CLIENT Token) =====
+GET http://localhost:5000/api/reservations/my
+Headers:
+  Authorization: Bearer YOUR_CLIENT_TOKEN_HERE
+
+No Body needed
+
+
+===== 12. CHECK AVAILABILITY (No Token Required) =====
+GET http://localhost:5000/api/reservations/check-availability?property=YOUR_PROPERTY_ID_HERE&dateDebut=2026-07-01&dateFin=2026-07-08
+
+No Body needed
+
+
+===== 13. CANCEL RESERVATION (Use CLIENT Token) =====
+DELETE http://localhost:5000/api/reservations/YOUR_RESERVATION_ID_HERE
+Headers:
+  Authorization: Bearer YOUR_CLIENT_TOKEN_HERE
+
+No Body needed
+
+
+===== 14. DELETE PROPERTY (Use PROPRIETAIRE Token) =====
+DELETE http://localhost:5000/api/properties/YOUR_PROPERTY_ID_HERE
+Headers:
+  Authorization: Bearer YOUR_PROPRIETAIRE_TOKEN_HERE
+
+No Body needed
+
+
+====================================================================
+=== TESTING WORKFLOW ========================================
+====================================================================
+
+1. Register PROPRIETAIRE → Save token
+2. Register CLIENT → Save token
+3. Create 2-3 properties using PROPRIETAIRE token → Save property IDs
+4. Get all properties (verify they appear)
+5. Create reservation using CLIENT token + property ID
+6. Try overlapping reservation (should fail with 409)
+7. Create non-overlapping reservation (should work)
+8. Get my reservations (verify they appear)
+9. Check availability for specific dates
+10. Cancel a reservation
+11. Update property price
+12. Delete property
+
+====================================================================
