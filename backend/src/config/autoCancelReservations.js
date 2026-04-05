@@ -1,34 +1,45 @@
-// ===== utils/autoCancelReservations.js =====
+// ===== config/autoCancelReservations.js =====
 const Reservation = require('../models/Reservation');
 
-const HOURS_48_IN_MS = 48 * 60 * 60 * 1000;
 const CHECK_INTERVAL = 60 * 60 * 1000; // Run every 1 hour
 
 /**
- * Cancel reservations that are EN_ATTENTE for more than 48 hours
+ * Cancel reservations based on each property's cancellationDelay
+ * Dynamically reads property.cancellationDelay (24h or 48h)
  */
 const cancelExpiredReservations = async () => {
   try {
     const now = new Date();
-    const expiryTime = new Date(now.getTime() - HOURS_48_IN_MS);
+    let totalCancelled = 0;
 
-    const result = await Reservation.updateMany(
-      {
-        status: 'EN_ATTENTE',
-        createdAt: { $lt: expiryTime }
-      },
-      {
-        $set: { status: 'ANNULEE' }
+    // Get all EN_ATTENTE reservations with their property
+    const pendingReservations = await Reservation.find({ status: 'EN_ATTENTE' })
+      .populate('property', 'cancellationDelay titre');
+
+    for (const reservation of pendingReservations) {
+      // Get cancellation delay from property (default 48h if not set)
+      const cancellationDelay = reservation.property?.cancellationDelay || 48;
+      const delayInMs = cancellationDelay * 60 * 60 * 1000;
+      
+      // Calculate expiry time based on property's cancellation delay
+      const expiryTime = new Date(reservation.createdAt.getTime() + delayInMs);
+
+      // If current time is past expiry, cancel the reservation
+      if (now > expiryTime) {
+        reservation.status = 'ANNULEE';
+        await reservation.save();
+        totalCancelled++;
+        console.log(`⏰ Auto-cancelled: Reservation ${reservation._id} (Property: ${reservation.property?.titre || 'N/A'}, Delay: ${cancellationDelay}h)`);
       }
-    );
+    }
 
-    if (result.modifiedCount > 0) {
-      console.log(`✅ Auto-cancel: ${result.modifiedCount} reservation(s) cancelled (older than 48h)`);
+    if (totalCancelled > 0) {
+      console.log(`✅ Auto-cancel: ${totalCancelled} reservation(s) cancelled`);
     } else {
       console.log('⏰ Auto-cancel: No expired reservations found');
     }
 
-    return result.modifiedCount;
+    return totalCancelled;
   } catch (error) {
     console.error('❌ Auto-cancel error:', error.message);
     return 0;
@@ -39,7 +50,7 @@ const cancelExpiredReservations = async () => {
  * Start the auto-cancel scheduler
  */
 const startAutoCancelScheduler = () => {
-  console.log('🔄 Auto-cancel scheduler started (runs every 1 hour)');
+  console.log('🔄 Auto-cancel scheduler started (runs every 1 hour, dynamic per property)');
   
   // Run immediately on startup
   cancelExpiredReservations();

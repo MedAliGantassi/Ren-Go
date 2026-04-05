@@ -26,6 +26,16 @@ const paymentSchema = new mongoose.Schema({
     type: String,
     enum: ['SUCCESS', 'FAILED'],
     required: [true, 'Le statut est requis']
+  },
+  commissionAmount: {
+    type: Number,
+    default: 0,
+    min: [0, 'La commission ne peut pas être négative']
+  },
+  netAmount: {
+    type: Number,
+    default: 0,
+    min: [0, 'Le montant net ne peut pas être négatif']
   }
 }, {
   timestamps: true

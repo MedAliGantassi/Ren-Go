@@ -19,13 +19,49 @@ const propertySchema = new mongoose.Schema({
     min: [0, 'Le prix ne peut pas être négatif']
   },
   localisation: {
-    type: String,
-    required: [true, 'La localisation est requise'],
-    trim: true
+    gouvernorat: {
+      type: String,
+      required: [true, 'Le gouvernorat est requis'],
+      trim: true
+    },
+    delegation: {
+      type: String,
+      required: [true, 'La délégation est requise'],
+      trim: true
+    }
   },
   images: {
     type: [String],
     default: []
+  },
+  bedrooms: {
+    type: Number,
+    min: [1, 'Property must have at least 1 bedroom'],
+    default: 1
+  },
+  bathrooms: {
+    type: Number,
+    min: [1, 'Property must have at least 1 bathroom'],
+    default: 1
+  },
+  maxGuests: {
+    type: Number,
+    min: [1, 'Au moins 1 personne est requise'],
+    default: 2
+  },
+  type: {
+    type: String,
+    enum: {
+      values: ['MAISON', 'MAISON_DHOTES', 'VILLA', 'APPARTEMENT', 'COTTAGE'],
+      message: '{VALUE} is not a valid property type'
+    },
+    required: [true, 'Le type de propriété est requis'],
+    default: 'APPARTEMENT'
+  },
+  cancellationDelay: {
+    type: Number,
+    enum: [24, 48],
+    default: 48
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,
@@ -42,7 +78,8 @@ const propertySchema = new mongoose.Schema({
 
 // Index for faster queries
 propertySchema.index({ owner: 1 });
-propertySchema.index({ localisation: 1 });
+propertySchema.index({ 'localisation.gouvernorat': 1 });
+propertySchema.index({ 'localisation.delegation': 1 });
 propertySchema.index({ prix: 1 });
 
 module.exports = mongoose.model('Property', propertySchema);

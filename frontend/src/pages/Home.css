@@ -1,0 +1,10 @@
+.home-page {
+  padding: var(--spacing-xl) 0;
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+}
+
+.home-page h1 {
+  color: var(--text-primary);
+}

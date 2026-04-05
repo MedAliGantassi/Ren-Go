@@ -1,6 +1,7 @@
 // ===== models/User.js =====
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -18,7 +19,7 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: [true, 'Password is required'],
-    minlength: 6
+    minlength: [8, 'Password must be at least 8 characters']
   },
   role: {
     type: String,
@@ -28,10 +29,29 @@ const userSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+  verificationToken: {
+    type: String,
+    select: false
+  },
+  verificationTokenExpires: {
+    type: Date,
+    select: false
   }
 }, {
   timestamps: true
 });
+
+userSchema.methods.generateVerificationToken = function() {
+  const token = crypto.randomBytes(32).toString('hex');
+  this.verificationToken = crypto.createHash('sha256').update(token).digest('hex');
+  this.verificationTokenExpires = Date.now() + 60 * 60 * 1000; // 1 hour
+  return token;
+};
 
 userSchema.pre('save', async function() {
   if (!this.isModified('password')) {

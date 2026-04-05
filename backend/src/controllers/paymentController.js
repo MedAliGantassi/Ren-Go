@@ -1,7 +1,21 @@
 // ===== controllers/paymentController.js =====
+const mongoose = require('mongoose');
 const Payment = require('../models/Payment');
 const Reservation = require('../models/Reservation');
 const Property = require('../models/Property');
+const Config = require('../models/Config');
+const { createNotification } = require('./notificationController');
+const { validateNumber, sendErrorResponse } = require('../config/validators');
+
+/**
+ * Calculate commission and net amount
+ */
+const calculateCommission = async (amount) => {
+  const commissionRate = await Config.getCommissionRate();
+  const commissionAmount = Math.round((amount * commissionRate / 100) * 100) / 100;
+  const netAmount = Math.round((amount - commissionAmount) * 100) / 100;
+  return { commissionAmount, netAmount, commissionRate };
+};
 
 /**
  * @desc    Process online payment for a reservation
@@ -9,10 +23,12 @@ const Property = require('../models/Property');
  * @access  Private (CLIENT only)
  */
 const createOnlinePayment = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  
   try {
     const { reservationId, amount } = req.body;
 
-    // Validation des champs requis
     if (!reservationId || !amount) {
       return res.status(400).json({
         success: false,
@@ -20,83 +36,127 @@ const createOnlinePayment = async (req, res) => {
       });
     }
 
-    // Récupérer la réservation
+    // Validate amount
+    const validAmount = validateNumber(amount, 0.01);
+
+    // Fetch reservation with session lock
     const reservation = await Reservation.findById(reservationId)
-      .populate('property', 'titre owner');
+      .populate('property', 'titre owner')
+      .session(session);
 
     if (!reservation) {
+      await session.abortTransaction();
       return res.status(404).json({
         success: false,
         message: 'Réservation non trouvée'
       });
     }
 
-    // Vérifier que le client est le propriétaire de la réservation
+    // Check ownership
     if (reservation.client.toString() !== req.user._id.toString()) {
+      await session.abortTransaction();
       return res.status(403).json({
         success: false,
         message: 'Non autorisé. Cette réservation ne vous appartient pas'
       });
     }
 
-    // Vérifier que la méthode de paiement est ONLINE
+    // Check payment method is ONLINE
     if (reservation.paymentMethod !== 'ONLINE') {
+      await session.abortTransaction();
       return res.status(400).json({
         success: false,
         message: 'Cette réservation nécessite un paiement en espèces (CASH)'
       });
     }
 
-    // Vérifier que la réservation est EN_ATTENTE
+    // Check reservation status
     if (reservation.status !== 'EN_ATTENTE') {
+      await session.abortTransaction();
       return res.status(400).json({
         success: false,
         message: `Impossible de payer. La réservation est déjà ${reservation.status}`
       });
     }
 
-    // Vérifier qu'il n'y a pas déjà un paiement SUCCESS pour cette réservation
+    // Check for existing payment within transaction
     const existingPayment = await Payment.findOne({
       reservation: reservationId,
       status: 'SUCCESS'
-    });
+    }).session(session);
 
     if (existingPayment) {
+      await session.abortTransaction();
       return res.status(400).json({
         success: false,
         message: 'Cette réservation a déjà été payée'
       });
     }
 
-    // Vérifier que le montant correspond au totalPrice
-    if (amount !== reservation.totalPrice) {
+    // Validate amount matches total price
+    if (validAmount !== reservation.totalPrice) {
+      await session.abortTransaction();
       return res.status(400).json({
         success: false,
-        message: `Le montant (${amount}) ne correspond pas au prix total (${reservation.totalPrice})`
+        message: `Le montant (${validAmount}) ne correspond pas au prix total (${reservation.totalPrice})`
       });
     }
 
-    // Simuler le paiement (toujours SUCCESS pour simplifier)
-    // En production, intégrer un vrai service de paiement (Stripe, PayPal, etc.)
-    const paymentSuccess = true; // Simulation: toujours succès
+    // Simulate payment (always SUCCESS for simplicity)
+    const paymentSuccess = true;
 
-    // Créer le paiement
-    const payment = await Payment.create({
-      reservation: reservationId,
-      client: req.user._id,
-      amount: amount,
-      method: 'ONLINE',
-      status: paymentSuccess ? 'SUCCESS' : 'FAILED'
-    });
-
-    // Si paiement réussi, mettre à jour le statut de la réservation
+    // Calculate commission
+    let commissionAmount = 0;
+    let netAmount = validAmount;
+    
     if (paymentSuccess) {
-      reservation.status = 'CONFIRMEE';
-      await reservation.save();
+      const commission = await calculateCommission(validAmount);
+      commissionAmount = commission.commissionAmount;
+      netAmount = commission.netAmount;
     }
 
-    // Populate le paiement pour la réponse
-    await payment.populate([
+    // Create payment within transaction
+    const payment = await Payment.create([{
+      reservation: reservationId,
+      client: req.user._id,
+      amount: validAmount,
+      method: 'ONLINE',
+      status: paymentSuccess ? 'SUCCESS' : 'FAILED',
+      commissionAmount: paymentSuccess ? commissionAmount : 0,
+      netAmount: paymentSuccess ? netAmount : 0
+    }], { session });
+
+    // Update reservation status within transaction
+    if (paymentSuccess) {
+      reservation.status = 'CONFIRMEE';
+      await reservation.save({ session });
+    }
+
+    await session.commitTransaction();
+
+    // Notify client about payment success
+    if (paymentSuccess) {
+      await createNotification({
+        user: req.user._id,
+        type: 'PAYMENT',
+        message: `Paiement de ${validAmount} TND effectué avec succès pour votre réservation`,
+        relatedId: payment[0]._id,
+        relatedModel: 'Payment'
+      });
+
+      // Notify proprietaire
+      await createNotification({
+        user: reservation.property.owner,
+        type: 'PAYMENT',
+        message: `Paiement reçu pour "${reservation.property.titre}" - ${validAmount} TND`,
+        relatedId: payment[0]._id,
+        relatedModel: 'Payment'
+      });
+    }
+
+    // Populate for response
+    await payment[0].populate('reservation');
+    await payment[0].populate([
       { path: 'reservation', select: 'property dateDebut dateFin totalPrice status' },
       { path: 'client', select: 'name email' }
     ]);
@@ -106,10 +166,9 @@ const createOnlinePayment = async (req, res) => {
       message: paymentSuccess 
         ? 'Paiement effectué avec succès. Réservation confirmée!' 
         : 'Échec du paiement. Veuillez réessayer.',
-      data: payment
+      data: payment[0]
     });
   } catch (error) {
-    // Handle invalid ObjectId
     if (error.kind === 'ObjectId') {
       return res.status(400).json({
         success: false,
@@ -168,18 +227,32 @@ const confirmCashPayment = async (req, res) => {
       });
     }
 
-    // Créer l'enregistrement de paiement
+    // Calculate commission
+    const { commissionAmount, netAmount } = await calculateCommission(reservation.totalPrice);
+
+    // Créer l'enregistrement de paiement avec commission
     const payment = await Payment.create({
       reservation: reservationId,
       client: reservation.client._id,
       amount: reservation.totalPrice,
       method: 'CASH',
-      status: 'SUCCESS'
+      status: 'SUCCESS',
+      commissionAmount: commissionAmount,
+      netAmount: netAmount
     });
 
     // Mettre à jour le statut de la réservation
     reservation.status = 'CONFIRMEE';
     await reservation.save();
+
+    // Notify client about payment confirmation
+    await createNotification({
+      user: reservation.client._id,
+      type: 'PAYMENT',
+      message: `Paiement de ${reservation.totalPrice} TND confirmé pour votre réservation`,
+      relatedId: payment._id,
+      relatedModel: 'Payment'
+    });
 
     // Populate le paiement pour la réponse
     await payment.populate([
@@ -193,7 +266,6 @@ const confirmCashPayment = async (req, res) => {
       data: payment
     });
   } catch (error) {
-    // Handle invalid ObjectId
     if (error.kind === 'ObjectId') {
       return res.status(400).json({
         success: false,

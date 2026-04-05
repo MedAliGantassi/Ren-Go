@@ -1,0 +1,15 @@
+.navbar-custom {
+  padding: var(--spacing-sm) 0;
+}
+
+.navbar-custom .nav-link {
+  color: var(--text-primary);
+  font-weight: 500;
+  padding: var(--spacing-sm) var(--spacing-md) !important;
+  transition: color 0.2s ease;
+}
+
+.navbar-custom .nav-link:hover,
+.navbar-custom .nav-link.active {
+  color: var(--color-primary);
+}

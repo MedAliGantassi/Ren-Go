@@ -1,6 +1,13 @@
 // ===== controllers/reservationController.js =====
 const Reservation = require('../models/Reservation');
 const Property = require('../models/Property');
+const { createNotification } = require('./notificationController');
+const { 
+  validateDate, 
+  validatePositiveInteger,
+  validatePaymentMethod,
+  sendErrorResponse 
+} = require('../config/validators');
 
 /**
  * @desc    Create a new reservation
@@ -9,61 +16,70 @@ const Property = require('../models/Property');
  */
 const createReservation = async (req, res) => {
   try {
-    const { property, dateDebut, dateFin, guests } = req.body;
-    console.log("BODY:", req.body);
+    const { property, dateDebut, dateFin, guests, paymentMethod } = req.body;
 
-    // Validation des champs requis
-    if (!property || !dateDebut || !dateFin || !guests) {
+    if (!property || !dateDebut || !dateFin || !guests || !paymentMethod) {
       return res.status(400).json({
-        message: 'Veuillez fournir tous les champs requis (property, dateDebut, dateFin, guests)'
+        success: false,
+        message: 'Veuillez fournir tous les champs requis (property, dateDebut, dateFin, guests, paymentMethod)'
       });
     }
 
-    // Convertir les dates en objets Date
-    const startDate = new Date(dateDebut);
-    const endDate = new Date(dateFin);
+    // Validate dates
+    const startDate = validateDate(dateDebut);
+    const endDate = validateDate(dateFin);
 
-    // Vérifier que la date de début est avant la date de fin
+    // Validate guests
+    const guestsNum = validatePositiveInteger(guests, 'Guests');
+
+    // Validate payment method
+    const validPaymentMethod = validatePaymentMethod(paymentMethod);
+
+    // Check start date is before end date
     if (startDate >= endDate) {
       return res.status(400).json({
+        success: false,
         message: 'La date de début doit être avant la date de fin'
       });
     }
 
-    // Vérifier que la date de début est dans le futur
-    if (startDate < new Date()) {
+    // Minimum 24 hours advance booking
+    const minLeadHours = 24;
+    const minReservationDate = new Date(Date.now() + minLeadHours * 60 * 60 * 1000);
+    
+    if (startDate <= minReservationDate) {
       return res.status(400).json({
-        message: 'La date de début doit être dans le futur'
+        success: false,
+        message: `Reservations must be made at least ${minLeadHours} hours in advance`
       });
     }
 
-    // Récupérer la propriété
+    // Fetch property
     const propertyDoc = await Property.findById(property);
     if (!propertyDoc) {
       return res.status(404).json({
+        success: false,
         message: 'Propriété non trouvée'
       });
     }
 
-    // Vérifier que la propriété est active
+    // Check property is active
     if (!propertyDoc.isActive) {
       return res.status(400).json({
+        success: false,
         message: 'Cette propriété n\'est pas disponible'
       });
     }
 
-    // Vérifier le nombre maximum de personnes (si maxGuests existe)
-    if (propertyDoc.maxGuests && guests > propertyDoc.maxGuests) {
+    // Check max guests capacity
+    if (propertyDoc.maxGuests && guestsNum > propertyDoc.maxGuests) {
       return res.status(400).json({
+        success: false,
         message: `Le nombre de personnes dépasse la capacité maximale (${propertyDoc.maxGuests})`
       });
     }
 
-    // ========================================
-    // OVERLAP CHECK - Using MongoDB Query
-    // ========================================
-    // Two date ranges overlap if:
-    // (newStart < existingEnd) AND (newEnd > existingStart)
+    // Overlap check using MongoDB query
     const overlappingReservation = await Reservation.findOne({
       property: property,
       status: { $in: ['EN_ATTENTE', 'CONFIRMEE'] },
@@ -73,6 +89,7 @@ const createReservation = async (req, res) => {
 
     if (overlappingReservation) {
       return res.status(409).json({
+        success: false,
         message: 'Cette propriété n\'est pas disponible pour les dates sélectionnées',
         conflictingDates: {
           dateDebut: overlappingReservation.dateDebut,
@@ -81,29 +98,37 @@ const createReservation = async (req, res) => {
       });
     }
 
-    // Calculer le nombre de nuits
-    const oneDay = 24 * 60 * 60 * 1000; // millisecondes dans un jour
+    // Calculate nights and total price
+    const oneDay = 24 * 60 * 60 * 1000;
     const numberOfNights = Math.round((endDate - startDate) / oneDay);
-
-    // Calculer le prix total
     const totalPrice = numberOfNights * propertyDoc.prix;
 
-    // Créer la réservation
+    // Create reservation
     const reservation = await Reservation.create({
       property,
       client: req.user._id,
       dateDebut: startDate,
       dateFin: endDate,
-      guests,
+      guests: guestsNum,
       totalPrice,
-      status: 'EN_ATTENTE'
+      status: 'EN_ATTENTE',
+      paymentMethod: validPaymentMethod
     });
 
     // Populate les références pour la réponse
     await reservation.populate([
-      { path: 'property', select: 'titre localisation prix images' },
+      { path: 'property', select: 'titre localisation prix images owner' },
       { path: 'client', select: 'name email' }
     ]);
+
+    // Notify proprietaire about new reservation
+    await createNotification({
+      user: propertyDoc.owner,
+      type: 'RESERVATION',
+      message: `Nouvelle réservation pour "${propertyDoc.titre}" du ${startDate.toLocaleDateString()} au ${endDate.toLocaleDateString()}`,
+      relatedId: reservation._id,
+      relatedModel: 'Reservation'
+    });
 
     res.status(201).json({
       success: true,
@@ -184,6 +209,20 @@ const cancelReservation = async (req, res) => {
     // Mettre à jour le statut à ANNULEE
     reservation.status = 'ANNULEE';
     await reservation.save();
+
+    // Get property for notification
+    const property = await Property.findById(reservation.property).select('titre owner');
+    
+    // Notify proprietaire about cancellation
+    if (property) {
+      await createNotification({
+        user: property.owner,
+        type: 'RESERVATION',
+        message: `Réservation annulée pour "${property.titre}"`,
+        relatedId: reservation._id,
+        relatedModel: 'Reservation'
+      });
+    }
 
     res.status(200).json({
       success: true,

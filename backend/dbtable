@@ -1,0 +1,225 @@
+=============================================================================
+                        RENGO DATABASE SCHEMA
+=============================================================================
+
+Collection: users
+--------------------------------------------------------------------------------
+Field                   Type            Constraints                   Index   Notes
+--------------------------------------------------------------------------------
+_id                     ObjectId        auto-generated                 ✅     Primary key
+name                    String          required, trim                 ❌     User full name
+email                   String          required, unique,              ❌     ⚠️ Should be indexed for login
+                                       lowercase, trim
+password                String          required, minlength: 8        ❌     Hashed with bcryptjs (salt: 10)
+role                    String          enum: [CLIENT,                ❌     User role
+                                       PROPRIETAIRE, ADMIN]
+                                       default: CLIENT
+isActive                Boolean         default: true                  ❌     Soft delete flag
+createdAt               Date            auto (timestamps)              ❌     
+updatedAt               Date            auto (timestamps)              ❌     
+
+Relationships:
+- Referenced by: Property (owner), Reservation (client), Payment (client),
+                Review (reviewer), Wishlist (user)
+
+
+=============================================================================
+Collection: properties
+--------------------------------------------------------------------------------
+Field                   Type            Constraints                   Index   Notes
+--------------------------------------------------------------------------------
+_id                     ObjectId        auto-generated                 ✅     Primary key
+titre                   String          required, trim,                ❌     Property title (French)
+                                       maxlength: 100
+description             String          trim, maxlength: 2000         ❌     Optional
+prix                    Number          required, min: 0               ✅     Price per night (indexed for sorting)
+localisation            Object          required                       -      Structured location
+  .gouvernorat          String          required, trim                 ✅     Region (indexed)
+  .delegation           String          required, trim                 ✅     District (indexed)
+images                  [String]        default: []                    ❌     Array of image URLs
+bedrooms                Number          min: 1, default: 1            ❌     
+bathrooms               Number          min: 1, default: 1            ❌     
+maxGuests               Number          min: 1, default: 2            ❌     Maximum occupancy
+cancellationDelay       Number          enum: [24, 48]                ❌     Hours before auto-cancel
+                                       default: 48
+owner                   ObjectId        ref: User, required            ✅     Property owner (indexed)
+isActive                Boolean         default: true                  ❌     Soft delete flag
+createdAt               Date            auto (timestamps)              ❌     
+updatedAt               Date            auto (timestamps)              ❌     
+
+Indexes:
+1. owner (single)
+2. localisation.gouvernorat (single)
+3. localisation.delegation (single)
+4. prix (single)
+
+Relationships:
+- Belongs to: User (owner)
+- Referenced by: Reservation (property), Review (property), Wishlist (properties array)
+
+
+=============================================================================
+Collection: reservations
+--------------------------------------------------------------------------------
+Field                   Type            Constraints                   Index   Notes
+--------------------------------------------------------------------------------
+_id                     ObjectId        auto-generated                 ✅     Primary key
+property                ObjectId        ref: Property, required        ✅     (part of compound index)
+client                  ObjectId        ref: User, required            ✅     Renter
+dateDebut               Date            required                       ✅     Check-in date (compound index)
+dateFin                 Date            required                       ✅     Check-out date (compound index)
+guests                  Number          required, min: 1              ❌     Number of guests
+totalPrice              Number          min: 0                        ❌     Calculated: nights × prix
+status                  String          enum: [EN_ATTENTE,             ✅     Reservation state
+                                       CONFIRMEE, ANNULEE]
+                                       default: EN_ATTENTE
+paymentMethod           String          enum: [CASH, ONLINE]          ❌     
+                                       default: CASH
+createdAt               Date            auto (timestamps)              ❌     Used for auto-cancel calculation
+updatedAt               Date            auto (timestamps)              ❌     
+
+Indexes:
+1. (property, dateDebut, dateFin) - Compound for overlap detection
+2. client (single)
+3. status (single)
+
+Validation (pre-save hook):
+- dateDebut must be < dateFin (throws error)
+
+Relationships:
+- Belongs to: Property (property), User (client)
+- Referenced by: Payment (reservation), Review (reservation - unique)
+
+
+=============================================================================
+Collection: payments
+--------------------------------------------------------------------------------
+Field                   Type            Constraints                   Index   Notes
+--------------------------------------------------------------------------------
+_id                     ObjectId        auto-generated                 ✅     Primary key
+reservation             ObjectId        ref: Reservation, required     ✅     
+client                  ObjectId        ref: User, required            ✅     
+amount                  Number          required, min: 0              ❌     Gross amount
+method                  String          enum: [CASH, ONLINE]          ❌     Payment type
+                                       required
+status                  String          enum: [SUCCESS, FAILED]       ✅     ⚠️ No PENDING status
+                                       required
+commissionAmount        Number          min: 0, default: 0            ❌     Platform commission
+netAmount               Number          min: 0, default: 0            ❌     Amount to proprietaire
+createdAt               Date            auto (timestamps)              ❌     
+updatedAt               Date            auto (timestamps)              ❌     
+
+Indexes:
+1. reservation (single)
+2. client (single)
+3. status (single)
+
+Relationships:
+- Belongs to: Reservation (reservation), User (client)
+
+
+=============================================================================
+Collection: reviews
+--------------------------------------------------------------------------------
+Field                   Type            Constraints                   Index   Notes
+--------------------------------------------------------------------------------
+_id                     ObjectId        auto-generated                 ✅     Primary key
+reservation             ObjectId        ref: Reservation,              ✅     One review per reservation
+                                       required, unique
+reviewer                ObjectId        ref: User, required            ❌     ⚠️ Should be indexed
+property                ObjectId        ref: Property, required        ✅     
+rating                  Number          required, min: 1, max: 5      ❌     1-5 stars
+comment                 String          trim, maxlength: 1000         ❌     Optional text
+createdAt               Date            auto (timestamps)              ❌     
+updatedAt               Date            auto (timestamps)              ❌     
+
+Indexes:
+1. reservation (unique constraint)
+2. property (single)
+
+Relationships:
+- Belongs to: Reservation (reservation), User (reviewer), Property (property)
+
+
+=============================================================================
+Collection: wishlists
+--------------------------------------------------------------------------------
+Field                   Type            Constraints                   Index   Notes
+--------------------------------------------------------------------------------
+_id                     ObjectId        auto-generated                 ✅     Primary key
+user                    ObjectId        ref: User, required,           ✅     One wishlist per user
+                                       unique
+properties              [ObjectId]      ref: Property                 ❌     Array of property IDs
+createdAt               Date            auto (timestamps)              ❌     
+updatedAt               Date            auto (timestamps)              ❌     
+
+Indexes:
+1. user (unique)
+
+Relationships:
+- Belongs to: User (user)
+- References: Property (properties array)
+
+
+=============================================================================
+Collection: configs
+--------------------------------------------------------------------------------
+Field                   Type            Constraints                   Index   Notes
+--------------------------------------------------------------------------------
+_id                     ObjectId        auto-generated                 ✅     Primary key
+key                     String          required, unique              ❌     ⚠️ Should be indexed
+commissionRate          Number          min: 0, max: 100              ❌     Platform commission %
+                                       default: 10
+createdAt               Date            auto (timestamps)              ❌     
+updatedAt               Date            auto (timestamps)              ❌     
+
+Static Methods:
+- getCommissionRate() - Returns current commission rate (default 10%)
+
+Relationships:
+- None (singleton-like usage)
+
+
+=============================================================================
+                        SCHEMA SUMMARY
+=============================================================================
+
+Total Collections: 7
+- users
+- properties
+- reservations
+- payments
+- reviews
+- wishlists
+- configs
+
+Total Indexes: 16
+- users: 0 (⚠️ email should be indexed)
+- properties: 4 (owner, localisation.gouvernorat, localisation.delegation, prix)
+- reservations: 3 (compound: property+dateDebut+dateFin, client, status)
+- payments: 3 (reservation, client, status)
+- reviews: 2 (reservation unique, property)
+- wishlists: 1 (user unique)
+- configs: 0 (⚠️ key should be indexed)
+
+Relationships:
+- One-to-Many: User → Properties, User → Reservations, Property → Reservations
+- One-to-One: Reservation → Review (unique constraint)
+- One-to-Many: Reservation → Payments
+- Many-to-Many: User ↔ Properties (via Wishlist)
+
+Missing Indexes (Recommendations):
+1. users.email (unique, for login queries)
+2. configs.key (for faster config lookups)
+3. reviews.reviewer (for "my reviews" queries)
+4. Compound index: (properties.owner, properties.isActive) for dashboard queries
+5. Compound index: (reviews.property, reviews.rating) for rating aggregation
+
+Data Integrity Issues:
+1. No cascading deletes defined (orphaned records possible)
+2. Wishlist can contain deleted/inactive properties
+3. Reservations remain if property deleted
+4. No foreign key validation in application layer
+5. No audit trail for changes
+
+=============================================================================
