@@ -1,0 +1,48 @@
+@startuml Chapitre4_Sequence1_Inscription
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+title Chapitre 4 - Diagramme de Séquence 1\nInscription + Vérification Email
+
+actor "Utilisateur" as ACTEUR
+participant "Système" as SYSTEME
+
+== Inscription ==
+
+ACTEUR -> SYSTEME : Remplir formulaire d'inscription\n(nom, email, téléphone, mot de passe, rôle)
+activate SYSTEME
+
+SYSTEME -> SYSTEME : Valider les données
+
+alt Email ou téléphone existe déjà
+    SYSTEME --> ACTEUR : Erreur : "Utilisateur existe déjà"
+else Données valides
+    SYSTEME -> SYSTEME : Créer le compte utilisateur
+    SYSTEME -> SYSTEME : Générer token de vérification
+    SYSTEME -> SYSTEME : Envoyer email de vérification
+    SYSTEME --> ACTEUR : Succès : "Veuillez vérifier votre email"
+end
+
+deactivate SYSTEME
+
+== Vérification Email ==
+
+ACTEUR -> ACTEUR : Ouvrir email\nCliquer sur le lien
+
+ACTEUR -> SYSTEME : Demander vérification avec token
+activate SYSTEME
+
+SYSTEME -> SYSTEME : Valider le token
+
+alt Token invalide ou expiré
+    SYSTEME --> ACTEUR : Erreur : "Token invalide ou expiré"
+else Token valide
+    SYSTEME -> SYSTEME : Marquer compte comme vérifié
+    SYSTEME --> ACTEUR : Succès : "Email vérifié.\nVous pouvez vous connecter"
+end
+
+deactivate SYSTEME
+
+@enduml

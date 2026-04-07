@@ -16,6 +16,18 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     trim: true
   },
+  phone: {
+    type: String,
+    required: [true, 'Phone is required'],
+    unique: true,
+    trim: true,
+    validate: {
+      validator: function(value) {
+        return /^(?:\+216\d{8}|[2-9]\d{7})$/.test(value);
+      },
+      message: 'Invalid phone format. Use +216XXXXXXXX or 2XXXXXXX'
+    }
+  },
   password: {
     type: String,
     required: [true, 'Password is required'],

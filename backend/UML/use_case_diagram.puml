@@ -1,0 +1,125 @@
+@startuml UseCaseDiagram_RenGo_Updated
+
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+
+title Ren&Go - Updated Use Case Diagram
+left to right direction
+
+actor "CLIENT" as CLIENT
+actor "PROPRIETAIRE" as PROPRIETAIRE
+actor "ADMIN" as ADMIN
+
+rectangle "Ren&Go Backend System" {
+  package "Authentication" {
+    usecase "Register" as UC_REGISTER
+    usecase "Verify Email" as UC_VERIFY_EMAIL
+    usecase "Login" as UC_LOGIN
+    usecase "Logout" as UC_LOGOUT
+  }
+
+  package "Property Management" {
+    usecase "Browse Properties" as UC_BROWSE_PROPERTIES
+    usecase "Filter by Type" as UC_FILTER_TYPE
+    usecase "Create Property" as UC_CREATE_PROPERTY
+    usecase "Update Property" as UC_UPDATE_PROPERTY
+    usecase "Delete Property" as UC_DELETE_PROPERTY
+    usecase "Check Availability" as UC_CHECK_AVAILABILITY
+  }
+
+  package "Reservation Management" {
+    usecase "Create Reservation" as UC_CREATE_RESERVATION
+    usecase "Cancel Reservation" as UC_CANCEL_RESERVATION
+    usecase "View My Reservations" as UC_VIEW_MY_RESERVATIONS
+    usecase "View Property Reservations" as UC_VIEW_PROPERTY_RESERVATIONS
+  }
+
+  package "Payment Management" {
+    usecase "Pay Online" as UC_PAY_ONLINE
+    usecase "Confirm Cash Payment" as UC_CONFIRM_CASH
+    usecase "View Payments" as UC_VIEW_PAYMENTS
+  }
+
+  package "Review Management" {
+    usecase "Create Review" as UC_CREATE_REVIEW
+    usecase "View Reviews" as UC_VIEW_REVIEWS
+    usecase "Delete Review" as UC_DELETE_REVIEW
+  }
+
+  package "Wishlist Management" {
+    usecase "Add to Wishlist" as UC_ADD_WISHLIST
+    usecase "Remove from Wishlist" as UC_REMOVE_WISHLIST
+    usecase "View Wishlist" as UC_VIEW_WISHLIST
+  }
+
+  package "Messaging" {
+    usecase "Send Message" as UC_SEND_MESSAGE
+    usecase "View Messages" as UC_VIEW_MESSAGES
+    usecase "Mark Message as Read" as UC_MARK_MESSAGE_READ
+  }
+
+  package "Notifications" {
+    usecase "Receive Notifications" as UC_RECEIVE_NOTIFICATIONS
+    usecase "Mark Notification as Read" as UC_MARK_NOTIFICATION_READ
+  }
+
+  package "Administration" {
+    usecase "Manage Users" as UC_MANAGE_USERS
+    usecase "Monitor Payments" as UC_MONITOR_PAYMENTS
+    usecase "View All Reservations" as UC_VIEW_ALL_RESERVATIONS
+  }
+}
+
+CLIENT --> UC_REGISTER
+CLIENT --> UC_VERIFY_EMAIL
+CLIENT --> UC_LOGIN
+CLIENT --> UC_LOGOUT
+CLIENT --> UC_BROWSE_PROPERTIES
+CLIENT --> UC_FILTER_TYPE
+CLIENT --> UC_CREATE_RESERVATION
+CLIENT --> UC_CANCEL_RESERVATION
+CLIENT --> UC_VIEW_MY_RESERVATIONS
+CLIENT --> UC_PAY_ONLINE
+CLIENT --> UC_VIEW_PAYMENTS
+CLIENT --> UC_CREATE_REVIEW
+CLIENT --> UC_VIEW_REVIEWS
+CLIENT --> UC_ADD_WISHLIST
+CLIENT --> UC_REMOVE_WISHLIST
+CLIENT --> UC_VIEW_WISHLIST
+CLIENT --> UC_SEND_MESSAGE
+CLIENT --> UC_VIEW_MESSAGES
+CLIENT --> UC_MARK_MESSAGE_READ
+CLIENT --> UC_RECEIVE_NOTIFICATIONS
+CLIENT --> UC_MARK_NOTIFICATION_READ
+
+PROPRIETAIRE --> UC_REGISTER
+PROPRIETAIRE --> UC_VERIFY_EMAIL
+PROPRIETAIRE --> UC_LOGIN
+PROPRIETAIRE --> UC_LOGOUT
+PROPRIETAIRE --> UC_CREATE_PROPERTY
+PROPRIETAIRE --> UC_UPDATE_PROPERTY
+PROPRIETAIRE --> UC_DELETE_PROPERTY
+PROPRIETAIRE --> UC_VIEW_PROPERTY_RESERVATIONS
+PROPRIETAIRE --> UC_CONFIRM_CASH
+PROPRIETAIRE --> UC_VIEW_PAYMENTS
+PROPRIETAIRE --> UC_VIEW_REVIEWS
+PROPRIETAIRE --> UC_SEND_MESSAGE
+PROPRIETAIRE --> UC_VIEW_MESSAGES
+PROPRIETAIRE --> UC_MARK_MESSAGE_READ
+PROPRIETAIRE --> UC_RECEIVE_NOTIFICATIONS
+PROPRIETAIRE --> UC_MARK_NOTIFICATION_READ
+
+ADMIN --> UC_LOGIN
+ADMIN --> UC_LOGOUT
+ADMIN --> UC_MANAGE_USERS
+ADMIN --> UC_MONITOR_PAYMENTS
+ADMIN --> UC_VIEW_ALL_RESERVATIONS
+ADMIN --> UC_DELETE_PROPERTY
+ADMIN --> UC_DELETE_REVIEW
+
+UC_CREATE_RESERVATION .> UC_CHECK_AVAILABILITY : <<include>>
+UC_BROWSE_PROPERTIES .> UC_FILTER_TYPE : <<extend>>
+UC_REGISTER .> UC_VERIFY_EMAIL : <<include>>
+UC_SEND_MESSAGE .> UC_RECEIVE_NOTIFICATIONS : <<include>>
+
+@enduml

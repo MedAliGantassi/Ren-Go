@@ -1,0 +1,329 @@
+@startuml ClassDiagram_RenGo_Chapter3
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultFontName Arial
+skinparam linetype ortho
+
+title CHAPTER 3 - Class Diagram\nRen&Go Platform
+
+' ========== USER CLASS ==========
+class User <<Entity>> {
+  ' Primary Key
+  - _id : ObjectId {PK}
+  
+  ' Basic Information
+  - name : String
+  - email : String {unique}
+  - phone : String {unique}
+  - password : String {hashed}
+  
+  ' Role & Status
+  - role : Enum {CLIENT, PROPRIETAIRE, ADMIN}
+  - isActive : Boolean
+  - isVerified : Boolean
+  
+  ' Email Verification
+  - verificationToken : String {nullable}
+  - verificationTokenExpires : Date {nullable}
+  
+  ' Timestamps
+  - createdAt : Date
+  - updatedAt : Date
+  
+  ' Methods
+  + register() : User
+  + login() : Token
+  + verifyEmail(token : String) : Boolean
+  + comparePassword(password : String) : Boolean
+  + generateVerificationToken() : String
+}
+
+' ========== PROPERTY CLASS ==========
+class Property <<Entity>> {
+  ' Primary Key
+  - _id : ObjectId {PK}
+  
+  ' Basic Information
+  - titre : String
+  - description : String
+  - prix : Number
+  
+  ' Location
+  - localisation.gouvernorat : String
+  - localisation.delegation : String
+  
+  ' Property Details
+  - images : String[]
+  - bedrooms : Number
+  - bathrooms : Number
+  - maxGuests : Number
+  - type : Enum {MAISON, MAISON_DHOTES, VILLA, APPARTEMENT, COTTAGE}
+  
+  ' Configuration
+  - cancellationDelay : Number {24 | 48}
+  
+  ' Relationships
+  - owner : ObjectId {FK -> User}
+  
+  ' Status
+  - isActive : Boolean
+  
+  ' Timestamps
+  - createdAt : Date
+  - updatedAt : Date
+  
+  ' Methods
+  + create() : Property
+  + update() : Property
+  + delete() : Boolean
+  + checkAvailability(dateDebut : Date, dateFin : Date) : Boolean
+  + calculateTotalPrice(nights : Number) : Number
+}
+
+' ========== RESERVATION CLASS ==========
+class Reservation <<Entity>> {
+  ' Primary Key
+  - _id : ObjectId {PK}
+  
+  ' Relationships
+  - property : ObjectId {FK -> Property}
+  - client : ObjectId {FK -> User}
+  
+  ' Reservation Details
+  - dateDebut : Date
+  - dateFin : Date
+  - guests : Number
+  - totalPrice : Number
+  
+  ' Status & Payment
+  - status : Enum {EN_ATTENTE, CONFIRMEE, ANNULEE}
+  - paymentMethod : Enum {CASH, ONLINE}
+  
+  ' Timestamps
+  - createdAt : Date
+  - updatedAt : Date
+  
+  ' Methods
+  + create() : Reservation
+  + cancel() : Boolean
+  + confirm() : Boolean
+  + checkOverlap(otherReservation : Reservation) : Boolean
+  + calculateNights() : Number
+  + isExpired() : Boolean
+}
+
+' ========== PAYMENT CLASS ==========
+class Payment <<Entity>> {
+  ' Primary Key
+  - _id : ObjectId {PK}
+  
+  ' Relationships
+  - reservation : ObjectId {FK -> Reservation}
+  - client : ObjectId {FK -> User}
+  
+  ' Payment Details
+  - amount : Number
+  - method : Enum {CASH, ONLINE}
+  - status : Enum {SUCCESS, FAILED}
+  
+  ' Commission
+  - commissionAmount : Number
+  - netAmount : Number
+  
+  ' Timestamps
+  - createdAt : Date
+  - updatedAt : Date
+  
+  ' Methods
+  + processOnlinePayment() : Payment
+  + confirmCashPayment() : Payment
+  + calculateCommission(rate : Number) : Number
+}
+
+' ========== REVIEW CLASS ==========
+class Review <<Entity>> {
+  ' Primary Key
+  - _id : ObjectId {PK}
+  
+  ' Relationships
+  - reservation : ObjectId {FK -> Reservation, unique}
+  - reviewer : ObjectId {FK -> User}
+  - property : ObjectId {FK -> Property}
+  
+  ' Review Content
+  - rating : Number {1..5}
+  - comment : String {max 1000}
+  
+  ' Timestamps
+  - createdAt : Date
+  - updatedAt : Date
+  
+  ' Methods
+  + create() : Review
+  + delete() : Boolean
+  + validate() : Boolean
+}
+
+' ========== WISHLIST CLASS ==========
+class Wishlist <<Entity>> {
+  ' Primary Key
+  - _id : ObjectId {PK}
+  
+  ' Relationships
+  - user : ObjectId {FK -> User, unique}
+  - properties : ObjectId[] {FK -> Property}
+  
+  ' Timestamps
+  - createdAt : Date
+  - updatedAt : Date
+  
+  ' Methods
+  + addProperty(propertyId : ObjectId) : Wishlist
+  + removeProperty(propertyId : ObjectId) : Wishlist
+  + getWishlist() : Wishlist
+}
+
+' ========== NOTIFICATION CLASS ==========
+class Notification <<Entity>> {
+  ' Primary Key
+  - _id : ObjectId {PK}
+  
+  ' Relationships
+  - user : ObjectId {FK -> User}
+  
+  ' Notification Details
+  - type : Enum {RESERVATION, PAYMENT, REVIEW, SYSTEM}
+  - message : String
+  - isRead : Boolean
+  
+  ' Polymorphic Reference
+  - relatedId : ObjectId {nullable}
+  - relatedModel : Enum {Reservation, Payment, Review, Property}
+  
+  ' Timestamps
+  - createdAt : Date
+  - updatedAt : Date
+  
+  ' Methods
+  + create() : Notification
+  + markAsRead() : Boolean
+  + markAllAsRead() : Number
+  + delete() : Boolean
+}
+
+' ========== MESSAGE CLASS ==========
+class Message <<Entity>> {
+  ' Primary Key
+  - _id : ObjectId {PK}
+  
+  ' Relationships
+  - sender : ObjectId {FK -> User}
+  - receiver : ObjectId {FK -> User}
+  - reservation : ObjectId {FK -> Reservation, nullable}
+  
+  ' Message Content
+  - content : String {max 1000}
+  - isRead : Boolean
+  
+  ' Timestamps
+  - createdAt : Date
+  - updatedAt : Date
+  
+  ' Methods
+  + send() : Message
+  + markAsRead() : Boolean
+  + getConversation(userId : ObjectId) : Message[]
+  + getConversationList() : Object[]
+}
+
+' ========== CONFIG CLASS ==========
+class Config <<Entity>> {
+  ' Primary Key
+  - _id : ObjectId {PK}
+  
+  ' Configuration
+  - key : String {unique}
+  - commissionRate : Number {0..100}
+  
+  ' Timestamps
+  - createdAt : Date
+  - updatedAt : Date
+  
+  ' Static Methods
+  + {static} getCommissionRate() : Number
+  + {static} updateCommissionRate(rate : Number) : Config
+}
+
+' ========== RELATIONSHIPS ==========
+
+' User to Property (1 to many)
+User "1" --> "0..*" Property : owns >
+
+' User to Reservation (1 to many)
+User "1" --> "0..*" Reservation : books >
+
+' Property to Reservation (1 to many)
+Property "1" --> "0..*" Reservation : receives >
+
+' Reservation to Payment (1 to many)
+Reservation "1" --> "0..*" Payment : has >
+
+' Reservation to Review (1 to 0..1)
+Reservation "1" --> "0..1" Review : generates >
+
+' Property to Review (1 to many)
+Property "1" --> "0..*" Review : reviewed by >
+
+' User to Review (1 to many)
+User "1" --> "0..*" Review : writes >
+
+' User to Wishlist (1 to 0..1)
+User "1" --> "0..1" Wishlist : has >
+
+' Wishlist to Property (many to many)
+Wishlist "1" o-- "0..*" Property : contains >
+
+' User to Notification (1 to many)
+User "1" --> "0..*" Notification : receives >
+
+' Polymorphic relationships (dashed)
+Notification "0..*" ..> Reservation : relatedId
+Notification "0..*" ..> Payment : relatedId
+Notification "0..*" ..> Review : relatedId
+Notification "0..*" ..> Property : relatedId
+
+' User to Message (as sender)
+User "1" --> "0..*" Message : sends >
+
+' User to Message (as receiver)
+User "1" --> "0..*" Message : receives >
+
+' Reservation to Message (optional)
+Reservation "1" --> "0..*" Message : context >
+
+note right of User
+  User can be:
+  - CLIENT: books properties
+  - PROPRIETAIRE: owns properties
+  - ADMIN: manages system
+end note
+
+note right of Property
+  Property type determines
+  category classification
+end note
+
+note right of Notification
+  Polymorphic relatedId
+  points to different entities
+  based on relatedModel
+end note
+
+note right of Message
+  Messages are only allowed
+  between CLIENT and PROPRIETAIRE
+end note
+
+@enduml

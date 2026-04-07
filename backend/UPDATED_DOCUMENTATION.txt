@@ -1,0 +1,145 @@
+RENGO BACKEND - UPDATED DOCUMENTATION
+=====================================
+
+1) BUSINESS LOGIC UPDATES
+-------------------------
+
+1.1 Messaging Rules
+- Only authenticated users can send/read messages.
+- ADMIN cannot send messages and cannot be used as message receiver.
+- Communication is strictly allowed between CLIENT and PROPRIETAIRE.
+- A user cannot message himself.
+- Message content is sanitized (basic HTML tag stripping + whitespace normalization).
+- Message max length is 1000 characters.
+- Reservation link is optional, but when provided:
+  - reservation ObjectId must be valid;
+  - reservation must exist;
+  - reservation must belong to the same CLIENT/PROPRIETAIRE pair in conversation.
+- Only receiver can mark a message as read.
+- Conversation list returns the latest message per peer + unread count.
+
+1.2 Notification Rules
+- Notifications are created for:
+  - new reservation (to PROPRIETAIRE),
+  - reservation cancellation (to PROPRIETAIRE),
+  - payment success (to CLIENT and/or PROPRIETAIRE depending on flow),
+  - new review (to PROPRIETAIRE),
+  - new message (to receiver).
+- Only authenticated users can access their own notifications.
+- Read status is tracked per notification.
+
+1.3 Email Verification Rules
+- User account is created with isVerified=false.
+- Verification token is generated, hashed, and expiration is set (1 hour).
+- Login is blocked until email is verified.
+- Verification endpoint validates token integrity and expiry.
+
+1.4 User Phone Rules
+- phone is required and unique.
+- Accepted formats:
+  - +216XXXXXXXX
+  - 2XXXXXXX (7-digit local format starting from 2 to 9)
+- Phone is sanitized before persistence.
+
+1.5 Property Type Rules
+- Property type is required.
+- Accepted enum values:
+  - MAISON
+  - MAISON_DHOTES
+  - VILLA
+  - APPARTEMENT
+  - COTTAGE
+- Default value: APPARTEMENT.
+- API property listing supports filtering by type.
+
+
+2) API ENDPOINTS (UPDATED)
+--------------------------
+
+2.1 Authentication
+- POST   /api/auth/register
+- POST   /api/auth/login
+- GET    /api/auth/verify-email?token=...
+- POST   /api/auth/resend-verification
+- GET    /api/auth/me
+
+2.2 Properties
+- GET    /api/properties
+  - supports query filter: ?type=VILLA (and other supported types)
+- GET    /api/properties/:id
+- POST   /api/properties
+- PUT    /api/properties/:id
+- DELETE /api/properties/:id
+
+2.3 Reservations
+- POST   /api/reservations
+- GET    /api/reservations/my
+- GET    /api/reservations/:id
+- DELETE /api/reservations/:id
+- GET    /api/reservations/check-availability
+
+2.4 Payments
+- POST   /api/payments/online
+- PUT    /api/payments/cash/:reservationId/confirm
+- GET    /api/payments/my
+- GET    /api/payments/received
+
+2.5 Reviews
+- POST   /api/reviews
+- GET    /api/reviews/property/:propertyId
+- GET    /api/reviews/me
+- DELETE /api/reviews/:id
+
+2.6 Wishlist
+- POST   /api/wishlist/:propertyId
+- DELETE /api/wishlist/:propertyId
+- GET    /api/wishlist/me
+
+2.7 Notifications
+- GET    /api/notifications
+- PUT    /api/notifications/read-all
+- PUT    /api/notifications/:id/read
+- DELETE /api/notifications/:id
+
+2.8 Messages
+- POST   /api/messages
+- GET    /api/messages
+- GET    /api/messages/:userId
+- PUT    /api/messages/:id/read
+
+2.9 Upload
+- POST   /api/upload/single
+- POST   /api/upload/multiple
+
+2.10 Dashboard / Admin
+- GET    /api/dashboard/client
+- GET    /api/dashboard/proprietaire
+- GET    /api/dashboard/admin
+- Admin management endpoints in /api/admin/*
+
+
+3) SYSTEM FEATURES LIST (UPDATED)
+---------------------------------
+
+- JWT Authentication with role-based authorization (CLIENT/PROPRIETAIRE/ADMIN)
+- Email verification workflow with expiring token
+- Required unique phone number with Tunisian/international validation
+- Property management with advanced metadata:
+  - bedrooms, bathrooms, maxGuests,
+  - cancellation delay (24h/48h),
+  - property type classification
+- Reservation workflow with overlap prevention and dynamic auto-cancellation
+- Payment workflow (ONLINE + CASH confirmation) with commission tracking
+- Review system bound to confirmed reservations
+- Wishlist system (one per user, deduped properties)
+- Notification center with read/unread management
+- Secure messaging system between CLIENT and PROPRIETAIRE
+- Dashboard APIs (client/proprietaire/admin)
+- Image upload system (single/multiple) with type + size constraints
+- Security hardening:
+  - rate limiting,
+  - CORS restrictions,
+  - request size limit,
+  - security headers,
+  - core input validation
+

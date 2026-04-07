@@ -1,0 +1,161 @@
+@startuml Chapitre2_DiagrammeCasUtilisation
+
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam defaultFontName Arial
+skinparam shadowing false
+
+title Chapitre 2 - Diagramme de Cas d'Utilisation\nPlateforme Ren&Go
+
+left to right direction
+
+' ========== ACTEURS ==========
+actor "Client" as CLIENT #LightBlue
+actor "Propriétaire" as PROPRIETAIRE #LightGreen
+actor "Administrateur" as ADMIN #Orange
+
+' ========== SYSTÈME ==========
+rectangle "Système Ren&Go" {
+
+  ' ========== AUTHENTIFICATION ==========
+  package "Authentification" #FFEBCD {
+    usecase "S'inscrire" as UC_INSCRIRE
+    usecase "Vérifier email" as UC_VERIFIER_EMAIL
+    usecase "Se connecter" as UC_CONNECTER
+    usecase "Se déconnecter" as UC_DECONNECTER
+  }
+
+  ' ========== GESTION DES PROPRIÉTÉS ==========
+  package "Gestion des Propriétés" #E6F3FF {
+    usecase "Consulter les propriétés" as UC_CONSULTER_PROPRIETES
+    usecase "Voir détails propriété" as UC_VOIR_DETAILS
+    usecase "Filtrer par type" as UC_FILTRER_TYPE
+    usecase "Vérifier disponibilité" as UC_VERIFIER_DISPO
+    usecase "Créer une propriété" as UC_CREER_PROPRIETE
+    usecase "Modifier une propriété" as UC_MODIFIER_PROPRIETE
+    usecase "Supprimer une propriété" as UC_SUPPRIMER_PROPRIETE
+  }
+
+  ' ========== GESTION DES RÉSERVATIONS ==========
+  package "Gestion des Réservations" #FFE6F0 {
+    usecase "Effectuer une réservation" as UC_RESERVER
+    usecase "Annuler une réservation" as UC_ANNULER_RESERVATION
+    usecase "Consulter mes réservations" as UC_MES_RESERVATIONS
+    usecase "Consulter réservations\nde mes propriétés" as UC_RESERVATIONS_PROPRIETES
+  }
+
+  ' ========== GESTION DES PAIEMENTS ==========
+  package "Gestion des Paiements" #E6FFE6 {
+    usecase "Payer en ligne" as UC_PAYER_LIGNE
+    usecase "Confirmer paiement espèces" as UC_CONFIRMER_ESPECES
+    usecase "Consulter mes paiements" as UC_MES_PAIEMENTS
+    usecase "Consulter paiements reçus" as UC_PAIEMENTS_RECUS
+  }
+
+  ' ========== GESTION DES AVIS ==========
+  package "Gestion des Avis" #FFF4E6 {
+    usecase "Laisser un avis" as UC_LAISSER_AVIS
+    usecase "Consulter les avis" as UC_CONSULTER_AVIS
+    usecase "Supprimer un avis" as UC_SUPPRIMER_AVIS
+  }
+
+  ' ========== LISTE DE SOUHAITS ==========
+  package "Liste de Souhaits" #F0E6FF {
+    usecase "Ajouter à la wishlist" as UC_AJOUTER_WISHLIST
+    usecase "Retirer de la wishlist" as UC_RETIRER_WISHLIST
+    usecase "Consulter ma wishlist" as UC_VOIR_WISHLIST
+  }
+
+  ' ========== MESSAGERIE ==========
+  package "Messagerie" #FFE6E6 {
+    usecase "Envoyer un message" as UC_ENVOYER_MESSAGE
+    usecase "Consulter les messages" as UC_VOIR_MESSAGES
+    usecase "Marquer message comme lu" as UC_MARQUER_LU
+  }
+
+  ' ========== NOTIFICATIONS ==========
+  package "Notifications" #E6F9FF {
+    usecase "Recevoir des notifications" as UC_RECEVOIR_NOTIF
+    usecase "Consulter les notifications" as UC_VOIR_NOTIF
+    usecase "Marquer notification comme lue" as UC_MARQUER_NOTIF_LU
+  }
+
+  ' ========== ADMINISTRATION ==========
+  package "Administration" #FFCCCC {
+    usecase "Gérer les utilisateurs" as UC_GERER_UTILISATEURS
+    usecase "Activer/Désactiver utilisateur" as UC_ACTIVER_UTILISATEUR
+    usecase "Consulter tous les utilisateurs" as UC_VOIR_UTILISATEURS
+    usecase "Gérer toutes les propriétés" as UC_GERER_PROPRIETES
+    usecase "Surveiller les paiements" as UC_SURVEILLER_PAIEMENTS
+    usecase "Consulter toutes les réservations" as UC_TOUTES_RESERVATIONS
+  }
+
+}
+
+' ========== RELATIONS CLIENT ==========
+CLIENT --> UC_INSCRIRE
+CLIENT --> UC_VERIFIER_EMAIL
+CLIENT --> UC_CONNECTER
+CLIENT --> UC_DECONNECTER
+CLIENT --> UC_CONSULTER_PROPRIETES
+CLIENT --> UC_VOIR_DETAILS
+CLIENT --> UC_FILTRER_TYPE
+CLIENT --> UC_RESERVER
+CLIENT --> UC_ANNULER_RESERVATION
+CLIENT --> UC_MES_RESERVATIONS
+CLIENT --> UC_PAYER_LIGNE
+CLIENT --> UC_MES_PAIEMENTS
+CLIENT --> UC_LAISSER_AVIS
+CLIENT --> UC_CONSULTER_AVIS
+CLIENT --> UC_AJOUTER_WISHLIST
+CLIENT --> UC_RETIRER_WISHLIST
+CLIENT --> UC_VOIR_WISHLIST
+CLIENT --> UC_ENVOYER_MESSAGE
+CLIENT --> UC_VOIR_MESSAGES
+CLIENT --> UC_MARQUER_LU
+CLIENT --> UC_RECEVOIR_NOTIF
+CLIENT --> UC_VOIR_NOTIF
+CLIENT --> UC_MARQUER_NOTIF_LU
+
+' ========== RELATIONS PROPRIÉTAIRE ==========
+PROPRIETAIRE --> UC_INSCRIRE
+PROPRIETAIRE --> UC_VERIFIER_EMAIL
+PROPRIETAIRE --> UC_CONNECTER
+PROPRIETAIRE --> UC_DECONNECTER
+PROPRIETAIRE --> UC_CREER_PROPRIETE
+PROPRIETAIRE --> UC_MODIFIER_PROPRIETE
+PROPRIETAIRE --> UC_SUPPRIMER_PROPRIETE
+PROPRIETAIRE --> UC_RESERVATIONS_PROPRIETES
+PROPRIETAIRE --> UC_CONFIRMER_ESPECES
+PROPRIETAIRE --> UC_PAIEMENTS_RECUS
+PROPRIETAIRE --> UC_CONSULTER_AVIS
+PROPRIETAIRE --> UC_ENVOYER_MESSAGE
+PROPRIETAIRE --> UC_VOIR_MESSAGES
+PROPRIETAIRE --> UC_MARQUER_LU
+PROPRIETAIRE --> UC_RECEVOIR_NOTIF
+PROPRIETAIRE --> UC_VOIR_NOTIF
+PROPRIETAIRE --> UC_MARQUER_NOTIF_LU
+
+' ========== RELATIONS ADMIN ==========
+ADMIN --> UC_CONNECTER
+ADMIN --> UC_DECONNECTER
+ADMIN --> UC_GERER_UTILISATEURS
+ADMIN --> UC_ACTIVER_UTILISATEUR
+ADMIN --> UC_VOIR_UTILISATEURS
+ADMIN --> UC_GERER_PROPRIETES
+ADMIN --> UC_SUPPRIMER_PROPRIETE
+ADMIN --> UC_SURVEILLER_PAIEMENTS
+ADMIN --> UC_TOUTES_RESERVATIONS
+ADMIN --> UC_SUPPRIMER_AVIS
+
+' ========== RELATIONS INCLUDE ==========
+UC_INSCRIRE ..> UC_VERIFIER_EMAIL : <<inclut>>
+UC_RESERVER ..> UC_VERIFIER_DISPO : <<inclut>>
+UC_CONSULTER_PROPRIETES ..> UC_VERIFIER_DISPO : <<inclut>>
+UC_ENVOYER_MESSAGE ..> UC_RECEVOIR_NOTIF : <<inclut>>
+
+' ========== RELATIONS EXTEND ==========
+UC_FILTRER_TYPE ..> UC_CONSULTER_PROPRIETES : <<étend>>
+UC_LAISSER_AVIS ..> UC_MES_RESERVATIONS : <<étend>>
+
+@enduml

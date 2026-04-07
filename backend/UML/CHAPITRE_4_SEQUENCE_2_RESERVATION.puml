@@ -1,0 +1,30 @@
+@startuml Chapitre4_Sequence1_Reservation
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+title Chapitre 4 - Diagramme de Séquence 1\nRéservation
+
+actor "Client" as ACTEUR
+participant "Système" as SYSTEME
+
+ACTEUR -> SYSTEME : Consulter les propriétés
+SYSTEME --> ACTEUR : Afficher la liste des propriétés
+
+ACTEUR -> SYSTEME : Sélectionner une propriété
+SYSTEME --> ACTEUR : Afficher les détails
+
+ACTEUR -> SYSTEME : Choisir les dates (début, fin)
+SYSTEME -> SYSTEME : Vérifier la disponibilité
+
+alt [Disponible]
+    SYSTEME --> ACTEUR : Propriété disponible
+    ACTEUR -> SYSTEME : Confirmer la réservation
+    SYSTEME -> SYSTEME : Créer la réservation
+    SYSTEME --> ACTEUR : Réservation créée avec succès
+else [Non disponible]
+    SYSTEME --> ACTEUR : Propriété non disponible
+end
+
+@enduml

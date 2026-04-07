@@ -1,0 +1,162 @@
+@startuml Chapitre3_DiagrammeClasses
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam linetype ortho
+
+title Chapitre 3 - Diagramme de Classes\nPlateforme Ren&Go
+
+' ========== CLASSE ABSTRAITE UTILISATEUR ==========
+abstract class Utilisateur <<abstract>> {
+  - _id : ObjectId
+  - nom : String
+  - email : String
+  - motDePasse : String
+  - estActif : Boolean
+  - estVerifie : Boolean
+  - tokenVerification : String
+  - dateExpirationToken : Date
+  - dateCreation : Date
+  - dateMiseAJour : Date
+}
+
+' ========== SOUS-CLASSES (HÉRITAGE) ==========
+class Client {
+  - telephone : String
+}
+
+class Proprietaire {
+  - telephone : String
+}
+
+' ========== HÉRITAGE ==========
+Utilisateur <|-- Client
+Utilisateur <|-- Proprietaire
+
+' ========== CLASSE PROPRIÉTÉ ==========
+class Propriete {
+  - _id : ObjectId
+  - titre : String
+  - description : String
+  - prix : Number
+  - gouvernorat : String
+  - delegation : String
+  - images : String[]
+  - chambres : Number
+  - sallesDeBain : Number
+  - capaciteMax : Number
+  - type : String
+  - delaiAnnulation : Number
+  - estActif : Boolean
+  - dateCreation : Date
+  - dateMiseAJour : Date
+}
+
+' ========== CLASSE RÉSERVATION ==========
+class Reservation {
+  - _id : ObjectId
+  - dateDebut : Date
+  - dateFin : Date
+  - nombreInvites : Number
+  - prixTotal : Number
+  - statut : String
+  - methodePaiement : String
+  - dateCreation : Date
+  - dateMiseAJour : Date
+}
+
+' ========== CLASSE PAIEMENT ==========
+class Paiement {
+  - _id : ObjectId
+  - montant : Number
+  - methode : String
+  - statut : String
+  - montantCommission : Number
+  - montantNet : Number
+  - dateCreation : Date
+  - dateMiseAJour : Date
+}
+
+' ========== CLASSE AVIS ==========
+class Avis {
+  - _id : ObjectId
+  - note : Number
+  - commentaire : String
+  - dateCreation : Date
+  - dateMiseAJour : Date
+}
+
+' ========== CLASSE WISHLIST ==========
+class Wishlist {
+  - _id : ObjectId
+  - dateCreation : Date
+  - dateMiseAJour : Date
+}
+
+' ========== CLASSE NOTIFICATION ==========
+class Notification {
+  - _id : ObjectId
+  - type : String
+  - message : String
+  - estLu : Boolean
+  - idReference : ObjectId
+  - modeleReference : String
+  - dateCreation : Date
+  - dateMiseAJour : Date
+}
+
+' ========== CLASSE MESSAGE ==========
+class Message {
+  - _id : ObjectId
+  - contenu : String
+  - estLu : Boolean
+  - dateCreation : Date
+  - dateMiseAJour : Date
+}
+
+' ========== RELATIONS ==========
+
+' Propriétaire possède des Propriétés
+Proprietaire "1" *-- "0..*" Propriete : possède >
+
+' Client effectue des Réservations
+Client "1" o-- "0..*" Reservation : effectue >
+
+' Propriété reçoit des Réservations
+Propriete "1" o-- "0..*" Reservation : concerne >
+
+' Réservation génère des Paiements
+Reservation "1" *-- "0..*" Paiement : génère >
+
+' Client effectue des Paiements
+Client "1" o-- "0..*" Paiement : paie >
+
+' Réservation peut avoir un Avis
+Reservation "1" o-- "0..1" Avis : évalue >
+
+' Client rédige des Avis
+Client "1" o-- "0..*" Avis : rédige >
+
+' Propriété reçoit des Avis
+Propriete "1" o-- "0..*" Avis : reçoit >
+
+' Client possède une Wishlist
+Client "1" *-- "0..1" Wishlist : possède >
+
+' Wishlist contient des Propriétés
+Wishlist "1" o-- "0..*" Propriete : contient >
+
+' Utilisateur reçoit des Notifications
+Utilisateur "1" o-- "0..*" Notification : reçoit >
+
+' Message - Client (relation unique)
+Client "1" -- "0..*" Message : envoyer/recevoir
+
+' Message - Propriétaire (relation unique)
+Proprietaire "1" -- "0..*" Message : envoyer/recevoir
+
+' Réservation peut être liée à des Messages
+Reservation "0..1" o-- "0..*" Message : contexte >
+
+@enduml

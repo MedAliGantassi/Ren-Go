@@ -1,0 +1,25 @@
+@startuml Chapitre4_Sequence3_Message
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+title Chapitre 4 - Diagramme de Séquence 3\nMessage
+
+actor "Utilisateur" as ACTEUR
+participant "Système" as SYSTEME
+
+ACTEUR -> SYSTEME : Accéder à la messagerie
+SYSTEME --> ACTEUR : Afficher les conversations
+
+loop [Consultation des messages]
+    ACTEUR -> SYSTEME : Sélectionner une conversation
+    SYSTEME --> ACTEUR : Afficher les messages
+end
+
+ACTEUR -> SYSTEME : Rédiger un message
+ACTEUR -> SYSTEME : Envoyer le message
+SYSTEME -> SYSTEME : Enregistrer le message
+SYSTEME --> ACTEUR : Message envoyé
+
+@enduml

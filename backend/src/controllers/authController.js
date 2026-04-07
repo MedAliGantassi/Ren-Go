@@ -10,22 +10,36 @@ const generateToken = (id, role) => {
   });
 };
 
+const sanitizePhone = (phone) => {
+  return String(phone || '').replace(/[^\d+]/g, '').trim();
+};
+
+const isValidPhone = (phone) => /^(?:\+216\d{8}|[2-9]\d{7})$/.test(phone);
+
 const register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, phone } = req.body;
+    const cleanPhone = sanitizePhone(phone);
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !cleanPhone) {
       return res.status(400).json({ message: 'Please provide all required fields' });
     }
 
-    const userExists = await User.findOne({ email });
+    if (!isValidPhone(cleanPhone)) {
+      return res.status(400).json({
+        message: 'Invalid phone format. Use +216XXXXXXXX or 2XXXXXXX'
+      });
+    }
+
+    const userExists = await User.findOne({ $or: [{ email }, { phone: cleanPhone }] });
     if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: 'User already exists with this email or phone' });
     }
 
     const user = new User({
       name,
       email,
+      phone: cleanPhone,
       password,
       role: role || 'CLIENT'
     });
@@ -46,6 +60,7 @@ const register = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         role: user.role,
         isVerified: user.isVerified
       }
@@ -155,6 +170,7 @@ const login = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         role: user.role,
         isActive: user.isActive,
         isVerified: user.isVerified

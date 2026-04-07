@@ -1,0 +1,164 @@
+@startuml UseCaseDiagram_RenGo_Chapter2
+
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam defaultFontName Arial
+skinparam shadowing false
+
+title CHAPTER 2 - Use Case Diagram\nRen&Go Platform
+
+left to right direction
+
+' ========== ACTORS ==========
+actor "CLIENT" as CLIENT #LightBlue
+actor "PROPRIETAIRE" as PROPRIETAIRE #LightGreen
+actor "ADMIN" as ADMIN #Orange
+
+' ========== SYSTEM ==========
+rectangle "Ren&Go System" {
+
+  ' ========== AUTHENTICATION PACKAGE ==========
+  package "Authentication" #FFEBCD {
+    usecase "Register" as UC_REGISTER
+    usecase "Verify Email" as UC_VERIFY_EMAIL
+    usecase "Login" as UC_LOGIN
+    usecase "Logout" as UC_LOGOUT
+  }
+
+  ' ========== PROPERTY MANAGEMENT PACKAGE ==========
+  package "Property Management" #E6F3FF {
+    usecase "Browse Properties" as UC_BROWSE_PROPERTIES
+    usecase "View Property Details" as UC_VIEW_PROPERTY_DETAILS
+    usecase "Create Property" as UC_CREATE_PROPERTY
+    usecase "Update Property" as UC_UPDATE_PROPERTY
+    usecase "Delete Property" as UC_DELETE_PROPERTY
+    usecase "Filter by Type" as UC_FILTER_TYPE
+    usecase "Check Availability" as UC_CHECK_AVAILABILITY
+  }
+
+  ' ========== RESERVATION MANAGEMENT PACKAGE ==========
+  package "Reservation Management" #FFE6F0 {
+    usecase "Make Reservation" as UC_MAKE_RESERVATION
+    usecase "Cancel Reservation" as UC_CANCEL_RESERVATION
+    usecase "View My Reservations" as UC_VIEW_MY_RESERVATIONS
+    usecase "View Property Reservations" as UC_VIEW_PROPERTY_RESERVATIONS
+  }
+
+  ' ========== PAYMENT MANAGEMENT PACKAGE ==========
+  package "Payment Management" #E6FFE6 {
+    usecase "Pay Online" as UC_PAY_ONLINE
+    usecase "Confirm Cash Payment" as UC_CONFIRM_CASH
+    usecase "View My Payments" as UC_VIEW_MY_PAYMENTS
+    usecase "View Received Payments" as UC_VIEW_RECEIVED_PAYMENTS
+  }
+
+  ' ========== REVIEW MANAGEMENT PACKAGE ==========
+  package "Review Management" #FFF4E6 {
+    usecase "Leave Review" as UC_LEAVE_REVIEW
+    usecase "View Reviews" as UC_VIEW_REVIEWS
+    usecase "Delete Review" as UC_DELETE_REVIEW
+  }
+
+  ' ========== WISHLIST MANAGEMENT PACKAGE ==========
+  package "Wishlist Management" #F0E6FF {
+    usecase "Add to Wishlist" as UC_ADD_WISHLIST
+    usecase "Remove from Wishlist" as UC_REMOVE_WISHLIST
+    usecase "View My Wishlist" as UC_VIEW_WISHLIST
+  }
+
+  ' ========== MESSAGING PACKAGE ==========
+  package "Messaging System" #FFE6E6 {
+    usecase "Send Message" as UC_SEND_MESSAGE
+    usecase "View Messages" as UC_VIEW_MESSAGES
+    usecase "Mark Message as Read" as UC_MARK_MESSAGE_READ
+  }
+
+  ' ========== NOTIFICATION PACKAGE ==========
+  package "Notification System" #E6F9FF {
+    usecase "Receive Notifications" as UC_RECEIVE_NOTIFICATIONS
+    usecase "Mark Notification as Read" as UC_MARK_NOTIFICATION_READ
+    usecase "View All Notifications" as UC_VIEW_ALL_NOTIFICATIONS
+  }
+
+  ' ========== ADMINISTRATION PACKAGE ==========
+  package "Administration" #FFCCCC {
+    usecase "Manage Users" as UC_MANAGE_USERS
+    usecase "Activate/Deactivate User" as UC_ACTIVATE_USER
+    usecase "View All Users" as UC_VIEW_ALL_USERS
+    usecase "Manage All Properties" as UC_MANAGE_PROPERTIES
+    usecase "Monitor Payments" as UC_MONITOR_PAYMENTS
+    usecase "View All Reservations" as UC_VIEW_ALL_RESERVATIONS
+    usecase "Monitor System" as UC_MONITOR_SYSTEM
+  }
+
+}
+
+' ========== CLIENT RELATIONSHIPS ==========
+CLIENT --> UC_REGISTER
+CLIENT --> UC_VERIFY_EMAIL
+CLIENT --> UC_LOGIN
+CLIENT --> UC_LOGOUT
+CLIENT --> UC_BROWSE_PROPERTIES
+CLIENT --> UC_VIEW_PROPERTY_DETAILS
+CLIENT --> UC_FILTER_TYPE
+CLIENT --> UC_MAKE_RESERVATION
+CLIENT --> UC_CANCEL_RESERVATION
+CLIENT --> UC_VIEW_MY_RESERVATIONS
+CLIENT --> UC_PAY_ONLINE
+CLIENT --> UC_VIEW_MY_PAYMENTS
+CLIENT --> UC_LEAVE_REVIEW
+CLIENT --> UC_VIEW_REVIEWS
+CLIENT --> UC_ADD_WISHLIST
+CLIENT --> UC_REMOVE_WISHLIST
+CLIENT --> UC_VIEW_WISHLIST
+CLIENT --> UC_SEND_MESSAGE
+CLIENT --> UC_VIEW_MESSAGES
+CLIENT --> UC_MARK_MESSAGE_READ
+CLIENT --> UC_RECEIVE_NOTIFICATIONS
+CLIENT --> UC_MARK_NOTIFICATION_READ
+CLIENT --> UC_VIEW_ALL_NOTIFICATIONS
+
+' ========== PROPRIETAIRE RELATIONSHIPS ==========
+PROPRIETAIRE --> UC_REGISTER
+PROPRIETAIRE --> UC_VERIFY_EMAIL
+PROPRIETAIRE --> UC_LOGIN
+PROPRIETAIRE --> UC_LOGOUT
+PROPRIETAIRE --> UC_CREATE_PROPERTY
+PROPRIETAIRE --> UC_UPDATE_PROPERTY
+PROPRIETAIRE --> UC_DELETE_PROPERTY
+PROPRIETAIRE --> UC_VIEW_PROPERTY_RESERVATIONS
+PROPRIETAIRE --> UC_CONFIRM_CASH
+PROPRIETAIRE --> UC_VIEW_RECEIVED_PAYMENTS
+PROPRIETAIRE --> UC_VIEW_REVIEWS
+PROPRIETAIRE --> UC_SEND_MESSAGE
+PROPRIETAIRE --> UC_VIEW_MESSAGES
+PROPRIETAIRE --> UC_MARK_MESSAGE_READ
+PROPRIETAIRE --> UC_RECEIVE_NOTIFICATIONS
+PROPRIETAIRE --> UC_MARK_NOTIFICATION_READ
+PROPRIETAIRE --> UC_VIEW_ALL_NOTIFICATIONS
+
+' ========== ADMIN RELATIONSHIPS ==========
+ADMIN --> UC_LOGIN
+ADMIN --> UC_LOGOUT
+ADMIN --> UC_MANAGE_USERS
+ADMIN --> UC_ACTIVATE_USER
+ADMIN --> UC_VIEW_ALL_USERS
+ADMIN --> UC_MANAGE_PROPERTIES
+ADMIN --> UC_DELETE_PROPERTY
+ADMIN --> UC_MONITOR_PAYMENTS
+ADMIN --> UC_VIEW_ALL_RESERVATIONS
+ADMIN --> UC_DELETE_REVIEW
+ADMIN --> UC_MONITOR_SYSTEM
+
+' ========== USE CASE RELATIONSHIPS ==========
+' Include relationships
+UC_REGISTER ..> UC_VERIFY_EMAIL : <<include>>
+UC_MAKE_RESERVATION ..> UC_CHECK_AVAILABILITY : <<include>>
+UC_BROWSE_PROPERTIES ..> UC_CHECK_AVAILABILITY : <<include>>
+UC_SEND_MESSAGE ..> UC_RECEIVE_NOTIFICATIONS : <<include>>
+
+' Extend relationships
+UC_FILTER_TYPE ..> UC_BROWSE_PROPERTIES : <<extend>>
+UC_LEAVE_REVIEW ..> UC_VIEW_MY_RESERVATIONS : <<extend>>
+
+@enduml

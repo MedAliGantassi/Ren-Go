@@ -1,0 +1,26 @@
+@startuml Chapitre4_Sequence2_Paiement
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+title Chapitre 4 - Diagramme de Séquence 2\nPaiement
+
+actor "Client" as ACTEUR
+participant "Système" as SYSTEME
+
+ACTEUR -> SYSTEME : Consulter la réservation
+SYSTEME --> ACTEUR : Afficher les détails et le montant
+
+ACTEUR -> SYSTEME : Lancer le paiement
+SYSTEME -> SYSTEME : Traiter le paiement
+
+alt [Succès]
+    SYSTEME -> SYSTEME : Enregistrer le paiement
+    SYSTEME -> SYSTEME : Confirmer la réservation
+    SYSTEME --> ACTEUR : Paiement réussi
+else [Échec]
+    SYSTEME --> ACTEUR : Paiement échoué
+end
+
+@enduml
