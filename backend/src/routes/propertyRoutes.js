@@ -18,7 +18,7 @@ router.get('/:id', getPropertyById);
 
 // Protected routes - PROPRIETAIRE only
 router.post('/', protect, authorize('PROPRIETAIRE'), createProperty);
-router.put('/:id', protect, authorize('PROPRIETAIRE'), updateProperty);
+router.put('/:id', protect, authorize('PROPRIETAIRE', 'ADMIN'), updateProperty);
 
 // Protected routes - PROPRIETAIRE or ADMIN can delete
 router.delete('/:id', protect, authorize('PROPRIETAIRE', 'ADMIN'), deleteProperty);

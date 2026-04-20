@@ -1,11 +1,198 @@
-.footer {
-  background-color: var(--bg-white);
-  padding: var(--spacing-lg) 0;
-  border-top: 1px solid #e9ecef;
-  margin-top: auto;
+/* ─────────────────────────────────────────
+   Ren&Go — Footer
+   ───────────────────────────────────────── */
+
+:root {
+  --green-primary: #075545;
+  --orange: #FF5300;
+  --footer-bg: #0a3d2e;
+  --footer-border: rgba(255, 255, 255, 0.12);
+  --footer-text: rgba(255, 255, 255, 0.7);
+  --footer-text-muted: rgba(255, 255, 255, 0.45);
+  --footer-link-hover: #fff;
 }
 
-.footer p {
-  color: var(--text-secondary);
-  font-size: var(--font-sm);
+/* ── Shell ── */
+.rengo-footer {
+  background-color: var(--footer-bg);
+  color: var(--footer-text);
+  font-size: 0.9rem;
+}
+
+/* ── Brand ── */
+.footer-brand {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.logo-img {
+  display: block;
+  object-fit: contain;
+}
+
+.footer-logo-img {
+  height: 50px;
+  width: auto;
+}
+
+.footer-brand .logo-ren {
+  color: #fff;
+}
+
+.footer-brand .logo-amp {
+  color: var(--orange);
+}
+
+.footer-brand .logo-go {
+  color: #fff;
+}
+
+/* ── Tagline ── */
+.footer-tagline {
+  color: var(--footer-text);
+  line-height: 1.6;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* ── Column headings ── */
+.footer-heading {
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.01em;
+  margin-bottom: 18px;
+  text-transform: none;
+}
+
+/* ── Link lists ── */
+.footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer-links a {
+  color: var(--footer-text);
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.2s ease;
+}
+
+.footer-links a:hover {
+  color: var(--footer-link-hover);
+}
+
+/* ── Newsletter ── */
+.newsletter-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--footer-border);
+  border-radius: 50px;
+  padding: 5px 5px 5px 16px;
+  width: 100%;
+}
+
+.newsletter-input {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  color: #fff !important;
+  font-size: 0.875rem;
+  flex: 1;
+  padding: 4px 0;
+}
+
+.newsletter-input::placeholder {
+  color: var(--footer-text-muted);
+}
+
+.newsletter-btn {
+  background-color: var(--orange) !important;
+  border-color: var(--orange) !important;
+  color: #fff !important;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: 50px !important;
+  padding: 7px 18px !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.newsletter-btn:hover {
+  background-color: #e04900 !important;
+  border-color: #e04900 !important;
+  transform: translateY(-1px);
+}
+
+/* ── Bottom bar ── */
+.footer-bottom {
+  border-top: 1px solid var(--footer-border);
+}
+
+.footer-bottom-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.footer-copy {
+  color: var(--footer-text-muted);
+  font-size: 0.82rem;
+}
+
+.footer-legal-links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.footer-legal-links a {
+  color: var(--footer-text-muted);
+  font-size: 0.82rem;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-legal-links a:hover {
+  color: #fff;
+}
+
+/* ── Responsive ── */
+@media (max-width: 767px) {
+  .footer-bottom-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .footer-legal-links {
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .newsletter-input-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+    border-radius: 12px;
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .newsletter-btn {
+    border-radius: 8px !important;
+    text-align: center;
+  }
 }

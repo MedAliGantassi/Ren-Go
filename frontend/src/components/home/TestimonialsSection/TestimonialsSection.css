@@ -1,0 +1,97 @@
+.testimonials-section {
+  background: #fff;
+  padding: 90px 0;
+}
+
+.testimonials-eyebrow {
+  display: inline-block;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #FF5300;
+  background: #fff3ee;
+  padding: 5px 14px;
+  border-radius: 50px;
+  margin-bottom: 16px;
+}
+
+.testimonials-title {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+/* ── Card ── */
+.testimonial-card {
+  background: #fff;
+  border: 1.5px solid #f0f0f0;
+  border-radius: 16px;
+  padding: 32px;
+  height: 100%;
+  position: relative;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.testimonial-quote {
+  display: block;
+  font-size: 2.4rem;
+  color: #e5e7eb;
+  line-height: 1;
+  margin-bottom: 12px;
+  font-family: Georgia, serif;
+}
+
+.testimonial-stars {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 14px;
+}
+
+.star {
+  color: #FF5300;
+  font-size: 1.1rem;
+}
+
+.testimonial-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  color: #374151;
+  line-height: 1.75;
+  margin-bottom: 24px;
+}
+
+.testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.testimonial-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.testimonial-name {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.testimonial-role {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.78rem;
+  color: #9ca3af;
+  margin-top: 2px;
+}

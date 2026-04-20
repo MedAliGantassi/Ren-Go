@@ -1,7 +1,40 @@
 // ===== config/autoCancelReservations.js =====
 const Reservation = require('../models/Reservation');
+const Payment = require('../models/Payment');
 
 const CHECK_INTERVAL = 60 * 60 * 1000; // Run every 1 hour
+
+const HOURS_TO_MS = 60 * 60 * 1000;
+
+const getCancellationDelayHours = (reservation) => {
+  const delay = Number(reservation?.property?.cancellationDelay);
+  return delay === 48 ? 48 : 24;
+};
+
+const shouldCancelReservation = (reservation, hasConfirmedPayment, now = new Date()) => {
+  if (!reservation || reservation.status !== 'EN_ATTENTE') {
+    return false;
+  }
+
+  if (hasConfirmedPayment) {
+    return false;
+  }
+
+  const startDate = new Date(reservation.dateDebut);
+  if (Number.isNaN(startDate.getTime())) {
+    return false;
+  }
+
+  // Do not auto-cancel reservations that have already started or are in the past.
+  if (now >= startDate) {
+    return false;
+  }
+
+  const cancellationDelay = getCancellationDelayHours(reservation);
+  const cancelLimit = new Date(startDate.getTime() - cancellationDelay * HOURS_TO_MS);
+
+  return now > cancelLimit;
+};
 
 /**
  * Cancel reservations based on each property's cancellationDelay
@@ -14,21 +47,34 @@ const cancelExpiredReservations = async () => {
 
     // Get all EN_ATTENTE reservations with their property
     const pendingReservations = await Reservation.find({ status: 'EN_ATTENTE' })
-      .populate('property', 'cancellationDelay titre');
+      .populate('property', 'cancellationDelay titre')
+      .select('_id status dateDebut property');
+
+    if (pendingReservations.length === 0) {
+      console.log('⏰ Auto-cancel: No pending reservations found');
+      return 0;
+    }
+
+    const reservationIds = pendingReservations.map((reservation) => reservation._id);
+    const confirmedPayments = await Payment.find({
+      reservation: { $in: reservationIds },
+      status: 'SUCCESS'
+    }).select('reservation');
+
+    const confirmedReservationIds = new Set(
+      confirmedPayments.map((payment) => payment.reservation.toString())
+    );
 
     for (const reservation of pendingReservations) {
-      // Get cancellation delay from property (default 48h if not set)
-      const cancellationDelay = reservation.property?.cancellationDelay || 48;
-      const delayInMs = cancellationDelay * 60 * 60 * 1000;
-      
-      // Calculate expiry time based on property's cancellation delay
-      const expiryTime = new Date(reservation.createdAt.getTime() + delayInMs);
+      const hasConfirmedPayment = confirmedReservationIds.has(reservation._id.toString());
 
-      // If current time is past expiry, cancel the reservation
-      if (now > expiryTime) {
+      if (shouldCancelReservation(reservation, hasConfirmedPayment, now)) {
         reservation.status = 'ANNULEE';
         await reservation.save();
+
+        const cancellationDelay = getCancellationDelayHours(reservation);
         totalCancelled++;
+
         console.log(`⏰ Auto-cancelled: Reservation ${reservation._id} (Property: ${reservation.property?.titre || 'N/A'}, Delay: ${cancellationDelay}h)`);
       }
     }
@@ -59,4 +105,8 @@ const startAutoCancelScheduler = () => {
   setInterval(cancelExpiredReservations, CHECK_INTERVAL);
 };
 
-module.exports = { startAutoCancelScheduler, cancelExpiredReservations };
+module.exports = {
+  startAutoCancelScheduler,
+  cancelExpiredReservations,
+  shouldCancelReservation
+};

@@ -1,0 +1,338 @@
+REN&GO - DESCRIPTION TEXTUELLE DES CAS D'UTILISATION
+Version corrigee et detaillee pour rapport PFE
+
+================================================================
+ACTEUR: CLIENT
+================================================================
+
+CAS D'UTILISATION: Consulter proprietes
+Acteur principal:
+- Client
+Description:
+- Le client parcourt la liste des proprietes disponibles et consulte leurs details.
+Preconditions:
+- Le systeme est accessible.
+- Les proprietes actives existent dans la base.
+Postconditions:
+- Le client visualise les informations des proprietes.
+Scenario principal:
+1. Le client accede a la page des proprietes.
+2. Le systeme affiche la liste des proprietes actives.
+3. Le client applique des filtres (type, prix, localisation, capacite, dates).
+4. Le systeme met a jour la liste selon les criteres.
+5. Le client ouvre une fiche propriete.
+6. Le systeme affiche les details complets (images, prix, disponibilite, avis).
+Scenarios alternatifs:
+- A1: Aucun resultat ne correspond aux filtres.
+  1. Le systeme affiche un message indiquant qu'aucune propriete n'est trouvee.
+  2. Le client modifie les filtres.
+
+CAS D'UTILISATION: Creer reservation
+Acteur principal:
+- Client
+Description:
+- Le client reserve une propriete pour une periode donnee.
+Preconditions:
+- Le client est authentifie.
+- La propriete est active.
+- Les dates saisies sont valides (startDate < endDate).
+- Aucune reservation existante ne chevauche la periode demandee.
+Postconditions:
+- Une reservation est creee avec statut EN_ATTENTE.
+- Le montant total est calcule.
+Scenario principal:
+1. Le client ouvre la fiche d'une propriete.
+2. Le client saisit startDate, endDate et guests.
+3. Le systeme verifie la disponibilite (absence de chevauchement).
+4. Le systeme calcule totalPrice.
+5. Le client confirme la demande.
+6. Le systeme enregistre la reservation avec statut EN_ATTENTE.
+7. Le systeme notifie le proprietaire.
+Scenarios alternatifs:
+- A1: Chevauchement detecte.
+  1. Le systeme refuse la creation.
+  2. Le systeme propose de nouvelles dates.
+- A2: Donnees invalides.
+  1. Le systeme affiche les erreurs de validation.
+  2. Le client corrige puis soumet a nouveau.
+
+CAS D'UTILISATION: Annuler reservation
+Acteur principal:
+- Client
+Description:
+- Le client annule une reservation selon les regles de la plateforme.
+Preconditions:
+- Le client est authentifie.
+- La reservation appartient au client.
+- La reservation n'est pas deja annulee.
+Postconditions:
+- Le statut de la reservation devient ANNULEE.
+- Les traitements associes (notification, remboursement si applicable) sont lances.
+Scenario principal:
+1. Le client accede a Mes reservations.
+2. Le client selectionne une reservation.
+3. Le client clique sur Annuler.
+4. Le systeme verifie les conditions d'annulation.
+5. Le systeme met a jour le statut a ANNULEE.
+6. Le systeme notifie le proprietaire.
+Scenarios alternatifs:
+- A1: Delai depasse selon politique d'annulation.
+  1. Le systeme refuse l'annulation automatique.
+  2. Le systeme affiche la raison et les options de support.
+
+CAS D'UTILISATION: Effectuer paiement
+Acteur principal:
+- Client
+Description:
+- Le client paie une reservation via CASH ou ONLINE.
+Preconditions:
+- Le client est authentifie.
+- La reservation est en statut EN_ATTENTE.
+- Le montant total est disponible.
+Postconditions:
+- Un enregistrement Payment est cree.
+- Le statut de paiement est mis a jour (SUCCESS ou FAILED).
+- La reservation est confirmee si le paiement est valide.
+Scenario principal:
+1. Le client ouvre une reservation en attente.
+2. Le systeme affiche le montant et les modes CASH/ONLINE.
+3. Le client choisit un mode de paiement.
+4. Le client confirme le paiement.
+5. Le systeme cree un Payment lie a la reservation.
+6. Le systeme traite le paiement (instantane pour ONLINE, en attente de validation pour CASH).
+7. Le systeme met a jour les statuts et envoie les notifications.
+Scenarios alternatifs:
+- A1: Paiement ONLINE echoue.
+  1. Le systeme marque le paiement FAILED.
+  2. Le client peut reessayer ou changer de mode.
+- A2: Mode CASH choisi.
+  1. Le systeme enregistre le paiement comme PENDING.
+  2. La validation finale est faite par le proprietaire.
+
+CAS D'UTILISATION: Gerer wishlist
+Acteur principal:
+- Client
+Description:
+- Le client ajoute ou retire des proprietes dans sa wishlist.
+Preconditions:
+- Le client est authentifie.
+- La propriete cible existe et est accessible.
+Postconditions:
+- La wishlist du client est mise a jour.
+- La relation many-to-many Wishlist-Property est maintenue.
+Scenario principal:
+1. Le client consulte une propriete.
+2. Le client clique sur Ajouter a la wishlist.
+3. Le systeme ajoute la propriete dans la wishlist du client.
+4. Le client peut ouvrir sa wishlist.
+5. Le systeme affiche toutes les proprietes sauvegardees.
+6. Le client peut retirer une propriete.
+7. Le systeme met a jour la wishlist.
+Scenarios alternatifs:
+- A1: Propriete deja presente.
+  1. Le systeme evite le doublon.
+  2. Le systeme informe que la propriete est deja sauvegardee.
+
+CAS D'UTILISATION: Laisser avis
+Acteur principal:
+- Client
+Description:
+- Le client publie un avis sur une reservation terminee.
+Preconditions:
+- Le client est authentifie.
+- La reservation est associee au client et terminee.
+- Aucun avis n'existe deja pour cette reservation.
+Postconditions:
+- Un avis est cree et rattache a la reservation et a la propriete.
+Scenario principal:
+1. Le client ouvre l'historique de reservations.
+2. Le client selectionne une reservation terminee.
+3. Le client saisit rating et comment.
+4. Le systeme verifie la regle un seul avis par reservation.
+5. Le systeme enregistre l'avis.
+6. Le systeme met a jour l'affichage des avis de la propriete.
+Scenarios alternatifs:
+- A1: Avis deja existant pour la reservation.
+  1. Le systeme bloque la creation.
+  2. Le systeme affiche un message explicatif.
+
+================================================================
+ACTEUR: PROPRIETAIRE
+================================================================
+
+CAS D'UTILISATION: Gerer proprietes
+Acteur principal:
+- Proprietaire
+Description:
+- Le proprietaire cree, modifie, active/desactive ou supprime ses proprietes.
+Preconditions:
+- Le proprietaire est authentifie.
+Postconditions:
+- Le catalogue du proprietaire est mis a jour.
+Scenario principal:
+1. Le proprietaire accede a son espace de gestion.
+2. Il choisit creer, modifier ou supprimer une propriete.
+3. Il renseigne les informations requises (title, description, pricePerNight, etc.).
+4. Le systeme valide les donnees.
+5. Le systeme enregistre les modifications.
+6. Le systeme confirme l'operation.
+Scenarios alternatifs:
+- A1: Donnees invalides ou incompletes.
+  1. Le systeme affiche les erreurs.
+  2. Le proprietaire corrige et resoumet.
+
+CAS D'UTILISATION: Consulter reservations
+Acteur principal:
+- Proprietaire
+Description:
+- Le proprietaire consulte les reservations de ses proprietes.
+Preconditions:
+- Le proprietaire est authentifie.
+- Le proprietaire possede au moins une propriete.
+Postconditions:
+- Le proprietaire dispose d'une vue a jour des demandes.
+Scenario principal:
+1. Le proprietaire ouvre la section reservations.
+2. Le systeme affiche les reservations liees a ses proprietes.
+3. Le proprietaire filtre par statut, date ou propriete.
+4. Le systeme affiche le detail de chaque reservation.
+Scenarios alternatifs:
+- A1: Aucune reservation.
+  1. Le systeme affiche une liste vide avec message informatif.
+
+CAS D'UTILISATION: Valider paiement cash
+Acteur principal:
+- Proprietaire
+Description:
+- Le proprietaire confirme la reception d'un paiement en especes.
+Preconditions:
+- Le proprietaire est authentifie.
+- Une reservation de ses proprietes possede un paiement CASH en attente.
+Postconditions:
+- Le paiement passe a SUCCESS.
+- La reservation est confirmee.
+Scenario principal:
+1. Le proprietaire ouvre les paiements en attente.
+2. Il selectionne un paiement CASH.
+3. Il confirme la reception du montant.
+4. Le systeme met a jour Payment.status a SUCCESS.
+5. Le systeme met a jour Reservation.status a CONFIRMEE.
+6. Le systeme notifie le client.
+Scenarios alternatifs:
+- A1: Le paiement n'est pas recu.
+  1. Le proprietaire rejette la validation.
+  2. Le systeme maintient le statut en PENDING.
+
+================================================================
+ACTEUR: ADMIN
+================================================================
+
+CAS D'UTILISATION: Gerer utilisateurs
+Acteur principal:
+- Admin
+Description:
+- L'admin consulte, active, desactive et supervise les comptes utilisateurs.
+Preconditions:
+- L'admin est authentifie avec les droits necessaires.
+Postconditions:
+- Les comptes sont conformes aux regles de moderation.
+Scenario principal:
+1. L'admin ouvre le module utilisateurs.
+2. Le systeme affiche la liste complete des utilisateurs.
+3. L'admin selectionne un compte.
+4. L'admin applique une action (activer, desactiver, consulter detail).
+5. Le systeme enregistre la mise a jour.
+Scenarios alternatifs:
+- A1: Utilisateur introuvable.
+  1. Le systeme affiche une erreur et recharge la liste.
+
+CAS D'UTILISATION: Gerer proprietes
+Acteur principal:
+- Admin
+Description:
+- L'admin modere toutes les proprietes de la plateforme.
+Preconditions:
+- L'admin est authentifie.
+Postconditions:
+- Les proprietes non conformes sont corrigees, suspendues ou supprimees.
+Scenario principal:
+1. L'admin accede au module proprietes.
+2. Le systeme affiche toutes les proprietes.
+3. L'admin examine les fiches signalees ou suspectes.
+4. L'admin applique une action de moderation.
+5. Le systeme journalise l'action et met a jour l'etat.
+Scenarios alternatifs:
+- A1: Conflit de droits ou propriete deja traitee.
+  1. Le systeme affiche un message d'etat.
+
+CAS D'UTILISATION: Consulter reservations
+Acteur principal:
+- Admin
+Description:
+- L'admin supervise toutes les reservations pour controle global.
+Preconditions:
+- L'admin est authentifie.
+Postconditions:
+- L'admin dispose d'une vision complete des flux de reservation.
+Scenario principal:
+1. L'admin ouvre le module reservations.
+2. Le systeme affiche toutes les reservations.
+3. L'admin filtre par periode, statut, client ou proprietaire.
+4. Le systeme presente les details correspondants.
+Scenarios alternatifs:
+- A1: Aucune reservation pour le filtre choisi.
+  1. Le systeme indique qu'aucun resultat n'est disponible.
+
+CAS D'UTILISATION: Surveiller paiements
+Acteur principal:
+- Admin
+Description:
+- L'admin suit l'etat des paiements et des commissions.
+Preconditions:
+- L'admin est authentifie.
+- Les transactions sont enregistrees.
+Postconditions:
+- Les anomalies de paiement sont identifiees.
+- Les metriques de commission sont disponibles.
+Scenario principal:
+1. L'admin accede au tableau de bord paiements.
+2. Le systeme affiche les paiements ONLINE et CASH.
+3. L'admin controle status, amount, commissionAmount et netAmount.
+4. L'admin repere les echecs ou incoherences.
+5. Le systeme fournit les informations necessaires au suivi.
+Scenarios alternatifs:
+- A1: Donnees incompletes sur une transaction.
+  1. Le systeme signale l'anomalie.
+  2. L'admin lance une verification supplementaire.
+
+CAS D'UTILISATION: Supprimer avis
+Acteur principal:
+- Admin
+Description:
+- L'admin supprime un avis non conforme aux regles de la plateforme.
+Preconditions:
+- L'admin est authentifie.
+- L'avis cible existe.
+Postconditions:
+- L'avis est retire de la plateforme.
+- La decision de moderation est historisee.
+Scenario principal:
+1. L'admin ouvre la liste des avis.
+2. L'admin selectionne l'avis a moderer.
+3. L'admin confirme la suppression.
+4. Le systeme supprime l'avis.
+5. Le systeme met a jour les statistiques associees.
+Scenarios alternatifs:
+- A1: Avis deja supprime.
+  1. Le systeme affiche un message informatif.
+
+================================================================
+REGLES METIER TRANSVERSES
+================================================================
+
+- RB1: Les attributs metier persistent en anglais dans le modele (id, name, email, createdAt, totalPrice, etc.).
+- RB2: Une reservation ne peut pas chevaucher une reservation existante pour la meme propriete.
+- RB3: Les modes de paiement autorises sont uniquement CASH et ONLINE.
+- RB4: Une reservation en attente est annulee automatiquement apres 48 heures selon la configuration.
+- RB5: Un seul avis est autorise par reservation.
+- RB6: La relation Wishlist-Property est many-to-many.

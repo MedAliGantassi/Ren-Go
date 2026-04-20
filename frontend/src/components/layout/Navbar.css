@@ -1,15 +1,178 @@
-.navbar-custom {
-  padding: var(--spacing-sm) 0;
+/* ─────────────────────────────────────────
+   Ren&Go — Navbar
+   ───────────────────────────────────────── */
+
+:root {
+  --green-primary: #075545;
+  --orange: #FF5300;
 }
 
-.navbar-custom .nav-link {
-  color: var(--text-primary);
+/* ── Shell ── */
+.rengo-navbar {
+  padding-top: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+/* ── Logo ── */
+.rengo-logo {
+  display: inline-flex;
+  align-items: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  text-decoration: none;
+  line-height: 1;
+}
+
+.logo-img {
+  display: block;
+  object-fit: contain;
+}
+
+.navbar-logo-img {
+  height: 40px;
+  width: auto;
+}
+
+.logo-ren {
+  color: var(--green-primary);
+}
+
+.logo-amp {
+  color: var(--orange);
+}
+
+.logo-go {
+  color: var(--green-primary);
+}
+
+/* ── Desktop nav links ── */
+.rengo-nav-link {
+  color: #4a4a4a !important;
+  font-size: 0.9rem;
   font-weight: 500;
-  padding: var(--spacing-sm) var(--spacing-md) !important;
+  padding: 6px 0 !important;
+  position: relative;
   transition: color 0.2s ease;
 }
 
-.navbar-custom .nav-link:hover,
-.navbar-custom .nav-link.active {
-  color: var(--color-primary);
+.rengo-nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--green-primary);
+  transition: width 0.25s ease;
+  border-radius: 2px;
+}
+
+.rengo-nav-link:hover {
+  color: var(--green-primary) !important;
+}
+
+.rengo-nav-link:hover::after {
+  width: 100%;
+}
+
+/* ── Auth buttons ── */
+.btn-connexion {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1a1a1a !important;
+  border-color: #c0c0c0 !important;
+  border-radius: 50px !important;
+  padding: 7px 20px !important;
+  transition: border-color 0.2s ease, color 0.2s ease;
+  background: transparent !important;
+}
+
+.btn-connexion:hover {
+  border-color: var(--green-primary) !important;
+  color: var(--green-primary) !important;
+}
+
+.btn-inscrire {
+  font-size: 0.875rem;
+  font-weight: 600;
+  background-color: var(--green-primary) !important;
+  border-color: var(--green-primary) !important;
+  border-radius: 50px !important;
+  padding: 7px 22px !important;
+  color: #fff !important;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.btn-inscrire:hover {
+  background-color: #054035 !important;
+  border-color: #054035 !important;
+  transform: translateY(-1px);
+}
+
+/* ── Hamburger button ── */
+.rengo-hamburger {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  width: 36px;
+  height: 36px;
+}
+
+.rengo-hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background-color: #1a1a1a;
+  border-radius: 2px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+/* ── Offcanvas (mobile menu) ── */
+.rengo-offcanvas .offcanvas-header {
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+.rengo-offcanvas .offcanvas-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.rengo-offcanvas .mobile-link {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1a1a !important;
+}
+
+.rengo-offcanvas .mobile-link:hover {
+  color: var(--green-primary) !important;
+}
+
+/* ── Layout: logo left | nav center | auth right ── */
+@media (min-width: 992px) {
+  .rengo-navbar .container-xl {
+    display: flex;
+    align-items: center;
+  }
+
+  .rengo-logo {
+    order: 1;
+    flex: 0 0 auto;
+  }
+
+  .desktop-nav {
+    order: 2;
+    flex: 1 1 auto;
+  }
+
+  .rengo-auth-buttons {
+    order: 3;
+    flex: 0 0 auto;
+  }
 }

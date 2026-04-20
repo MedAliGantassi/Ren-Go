@@ -1,0 +1,905 @@
+REN&GO - COMPLETE BUSINESS LOGIC BLUEPRINT (A TO Z)
+Version: Implementation-aligned blueprint for Node.js (Express) + MongoDB (Mongoose) REST API
+
+=====================================================================
+0) PURPOSE, SCOPE, AND SYSTEM VISION
+=====================================================================
+
+Ren&Go is a role-based rental marketplace where:
+- CLIENT users search properties, reserve available dates, pay, and review stays.
+- PROPRIETAIRE users publish and manage properties, receive reservation/payment activity, and validate CASH payments.
+- ADMIN users govern platform-level rules and monitor global business metrics.
+
+This document defines the complete business logic implemented in the backend:
+- domain rules
+- access rights
+- lifecycle transitions
+- validation and consistency rules
+- end-to-end flows
+- edge cases and operational constraints
+
+Main modules:
+1. Authentication + Authorization (JWT + RBAC)
+2. User role behavior
+3. Property management
+4. Reservation management (with overlap prevention)
+5. Manual cancellation
+6. Automatic cancellation scheduler
+7. Payment flows (ONLINE and CASH)
+8. Wishlist management
+9. Review management
+10. Dashboard logic (CLIENT / PROPRIETAIRE / ADMIN)
+11. CRUD authority matrix per entity
+12. Security, validation, and data consistency
+13. Complete end-to-end user journey
+14. Edge cases and known implementation boundaries
+
+
+=====================================================================
+1) SYSTEM ARCHITECTURE AND LOGICAL LAYERS
+=====================================================================
+
+1.1 Architectural style
+- Express-based REST API using MVC-like separation:
+  - Models (Mongoose schemas + indexes + schema-level constraints)
+  - Controllers (business rules + authorization checks + orchestration)
+  - Routes (endpoint exposure + middleware chain)
+  - Middleware (JWT auth, role authorization, rate-limiting)
+  - Config utilities (DB, validators, email, auto-cancel scheduler)
+
+1.2 Core entities
+- User
+- Property
+- Reservation
+- Payment
+- Review
+- Wishlist
+- Notification
+- Message
+- Config (global commission configuration)
+
+1.3 Global routing surface
+- /api/auth
+- /api/properties
+- /api/reservations
+- /api/payments
+- /api/reviews
+- /api/wishlist
+- /api/dashboard
+- /api/admin
+- /api/notifications
+- /api/messages
+- /api/upload
+
+1.4 Startup and background behavior
+- Server starts Express app.
+- MongoDB connection is initialized.
+- Auto-cancel scheduler is started:
+  - runs immediately at startup
+  - then repeats every 1 hour
+
+
+=====================================================================
+2) ROLE MODEL, ACCOUNT STATES, AND ACCESS PHILOSOPHY
+=====================================================================
+
+2.1 Role model (single User collection)
+- User.role enum:
+  - CLIENT
+  - PROPRIETAIRE
+  - ADMIN
+- Default role on registration: CLIENT (unless role supplied and accepted by backend logic).
+
+2.2 Account state gates
+- isVerified:
+  - false after registration
+  - becomes true after valid email verification token
+- isActive:
+  - true by default
+  - if false, login is blocked and protected access is denied
+
+2.3 JWT and identity propagation
+- On successful login:
+  - JWT is issued with payload { id, role }
+  - token expiry: 7 days
+- On protected routes:
+  - Authorization: Bearer <token>
+  - middleware validates token and loads user
+
+2.4 Authorization philosophy
+- Route-level RBAC with authorize(...roles)
+- Controller-level ownership checks for resource-level permission
+- Effective model:
+  - coarse access by role at route entry
+  - fine access by ownership/business conditions inside controller
+
+
+=====================================================================
+3) AUTHENTICATION FLOW (REGISTER -> VERIFY -> LOGIN -> ACCESS)
+=====================================================================
+
+3.1 Registration (POST /api/auth/register)
+Required fields:
+- name
+- email
+- password
+- phone
+Optional:
+- role
+
+Business logic:
+1. sanitize phone input
+2. validate required fields
+3. validate phone format:
+   - +216XXXXXXXX OR 2XXXXXXX
+4. enforce uniqueness:
+   - no existing user with same email or phone
+5. create user with:
+   - isVerified = false
+   - isActive = true
+6. generate verification token:
+   - token stored as SHA-256 hash
+   - token expiry = now + 1 hour
+7. send verification email (email failure is logged; registration still succeeds)
+8. return created user summary (without password)
+
+3.2 Email verification (GET /api/auth/verify-email?token=...)
+Business logic:
+1. token presence required
+2. incoming token is hashed
+3. user lookup by:
+   - verificationToken == hashedToken
+   - verificationTokenExpires > now
+4. if valid:
+   - set isVerified = true
+   - clear verificationToken + expiry fields
+5. return success
+
+3.3 Resend verification (POST /api/auth/resend-verification)
+Business logic:
+1. email required
+2. user must exist
+3. user must not already be verified
+4. generate new verification token + expiry
+5. send verification email
+
+3.4 Login (POST /api/auth/login)
+Business logic:
+1. require email + password
+2. find user by email
+3. reject if user missing
+4. reject if user not verified
+5. reject if user deactivated (isActive = false)
+6. compare bcrypt password hash
+7. issue JWT (7d)
+8. return token + user profile data
+
+3.5 Authenticated profile check (GET /api/auth/me)
+- Requires valid JWT
+- Returns req.user as authenticated identity snapshot
+
+
+=====================================================================
+4) USER MANAGEMENT LOGIC
+=====================================================================
+
+4.1 User data and constraints
+- email: required, unique, lowercased, trimmed
+- phone: required, unique, validated regex
+- password: required, min length 8, stored hashed (bcrypt salt 10)
+- role: CLIENT | PROPRIETAIRE | ADMIN
+- isActive, isVerified control account availability
+
+4.2 Activation/deactivation behavior
+- isActive=false blocks:
+  - login
+  - protected route access via auth middleware
+- This acts as account-level suspension without deleting data.
+
+4.3 Role behavior summary
+- CLIENT:
+  - reserve, pay, wishlist, review, messaging with owners, client dashboard
+- PROPRIETAIRE:
+  - manage own properties, confirm CASH payments, receive reservations/payments, owner dashboard
+- ADMIN:
+  - platform-level dashboard, commission management, privileged moderation deletes
+
+4.4 User CRUD boundaries in current API
+- Public create user exists through register endpoint.
+- Dedicated admin user CRUD endpoints are not exposed in current routing.
+- User operational management in current implementation is primarily:
+  - self-authentication lifecycle
+  - account state checks
+
+
+=====================================================================
+5) PROPERTY MODULE - FULL BUSINESS LOGIC
+=====================================================================
+
+5.1 Property model fields (core business meaning)
+- titre, description
+- prix (base price per night used in reservation pricing)
+- localisation { gouvernorat, delegation }
+- images[]
+- bedrooms, bathrooms, maxGuests
+- type in { MAISON, MAISON_DHOTES, VILLA, APPARTEMENT, COTTAGE }
+- cancellationDelay in { 24, 48 } hours
+- owner (User reference)
+- isActive (listing availability flag)
+
+5.2 Create property (POST /api/properties, PROPRIETAIRE only)
+Business steps:
+1. require titre, prix, localisation
+2. enforce role = PROPRIETAIRE
+3. validate localisation object structure
+4. validate numeric fields and ranges (prix >= 1 for creation path)
+5. validate images format if provided
+6. validate type against enum
+7. validate cancellationDelay in [24, 48]
+8. assign owner = authenticated user
+9. persist and return property
+
+5.3 Read properties (GET /api/properties public listing)
+Filtering logic:
+- base filter always includes isActive=true
+- localisation search:
+  - regex (case-insensitive) on gouvernorat or delegation
+- price range:
+  - minPrix -> $gte
+  - maxPrix -> $lte
+- bedrooms/bathrooms/maxGuests:
+  - interpreted as minimum threshold ($gte)
+- type:
+  - exact enum match
+- owner:
+  - optional owner filter
+- pagination:
+  - page default 1
+  - limit default 20, max 100
+- sort:
+  - newest first (createdAt descending)
+
+5.4 Get one property (GET /api/properties/:id)
+- returns property with owner basic info
+- returns 404 if not found
+
+5.5 Update property (PUT /api/properties/:id, owner only)
+Business rules:
+1. property must exist
+2. requester must be owner
+3. partial update allowed for provided fields
+4. type validated if supplied
+5. isActive can be toggled to deactivate/activate listing
+6. owner is not reassignable via this endpoint
+
+5.6 Delete property (DELETE /api/properties/:id)
+Allowed actors:
+- owner of property
+- ADMIN
+Behavior:
+- hard delete (physical deletion from DB)
+
+5.7 Ownership logic
+- owner identity check is strict _id string comparison
+- principal rule:
+  - ownership required for update
+  - ownership OR admin required for delete
+
+
+=====================================================================
+6) RESERVATION SYSTEM - CRITICAL CORE LOGIC
+=====================================================================
+
+6.1 Reservation model fields
+- property (ref)
+- client (ref)
+- dateDebut
+- dateFin
+- guests
+- totalPrice
+- status: EN_ATTENTE | CONFIRMEE | ANNULEE
+- paymentMethod: CASH | ONLINE
+
+6.2 Reservation creation endpoint
+- POST /api/reservations
+- Access: CLIENT only
+
+6.3 Reservation creation validation sequence
+1. required fields:
+   - property, dateDebut, dateFin, guests, paymentMethod
+2. date format validation
+3. chronological validation:
+   - dateDebut < dateFin
+4. minimum advance booking rule:
+   - dateDebut must be at least 24h in future
+5. property existence check
+6. property active check:
+   - reject if property.isActive=false
+7. guest capacity check:
+   - guests <= property.maxGuests
+8. overlap prevention query
+9. total price calculation
+10. create reservation with status=EN_ATTENTE
+11. notify property owner
+
+6.4 Overlap detection logic (business-critical)
+Conflict query checks for same property where status is active (EN_ATTENTE or CONFIRMEE):
+- existing.dateDebut < new.dateFin
+- existing.dateFin > new.dateDebut
+
+Meaning:
+- if any existing reservation intersects requested interval, booking is rejected (409).
+- ANNULEE reservations do not block dates.
+
+Pseudo-query:
+{
+  property: propertyId,
+  status: { $in: ['EN_ATTENTE', 'CONFIRMEE'] },
+  dateDebut: { $lt: requestedEnd },
+  dateFin:   { $gt: requestedStart }
+}
+
+6.5 totalPrice calculation
+- nights = round((dateFin - dateDebut) / 86400000)
+- totalPrice = nights * property.prix
+
+Business implication:
+- property.prix acts as nightly unit price.
+- totalPrice is fixed at creation and used for payment matching.
+
+6.6 Reservation statuses and transitions
+Initial:
+- EN_ATTENTE
+
+Transition paths:
+- EN_ATTENTE -> CONFIRMEE (successful ONLINE payment OR CASH confirmation by owner)
+- EN_ATTENTE -> ANNULEE (manual cancel or auto-cancel after delay)
+- CONFIRMEE -> ANNULEE (manual cancel by client)
+
+6.7 Reservation read operations
+- GET /api/reservations/my (CLIENT):
+  - list own reservations
+  - optional status filter
+- GET /api/reservations/:id (protected):
+  - accessible by:
+    - reservation owner (client)
+    - property owner (proprietaire)
+    - admin
+
+6.8 Availability endpoint
+- GET /api/reservations/check-availability?property=&dateDebut=&dateFin=
+- public endpoint
+- uses same overlap detection logic as creation
+
+6.9 Reservation cancellation (manual)
+- DELETE /api/reservations/:id
+- Access: CLIENT only
+Rules:
+1. reservation must exist
+2. requester must own reservation
+3. if already ANNULEE -> reject
+4. set status = ANNULEE
+5. notify property owner
+
+
+=====================================================================
+7) CANCELLATION LOGIC (MANUAL + POLICY EFFECTS)
+=====================================================================
+
+7.1 Manual cancellation policy in implementation
+- CLIENT can cancel own reservation.
+- Current implementation does not enforce a cutoff window before stay.
+- Cancel can occur on EN_ATTENTE and CONFIRMEE reservations.
+
+7.2 Side effects
+- Reservation status becomes ANNULEE.
+- Notification sent to property owner.
+
+7.3 Financial side effects (current behavior)
+- No refund workflow implemented.
+- Existing payment records are not reversed automatically.
+- Payment status remains as recorded.
+
+
+=====================================================================
+8) AUTO-CANCELLATION SYSTEM (BACKGROUND RULE ENGINE)
+=====================================================================
+
+8.1 Scheduler behavior
+- module started at server boot
+- immediate run once
+- recurring run every 1 hour via setInterval
+
+8.2 Auto-cancel target set
+- only reservations with status EN_ATTENTE are examined
+
+8.3 Delay rule
+- cancellationDelay is property-driven:
+  - 24h or 48h
+- fallback default if missing: 48h
+
+8.4 Expiry calculation
+- expiryTime = reservation.createdAt + cancellationDelay(hours)
+- if now > expiryTime:
+  - reservation.status = ANNULEE
+  - save
+
+8.5 Business effect
+- unpaid pending reservations are automatically released
+- date slot can be booked again (because ANNULEE no longer blocks overlap query)
+
+8.6 Current limitations
+- no notification dispatch to client/owner on auto-cancel
+- no automatic refund/financial reconciliation step
+
+
+=====================================================================
+9) PAYMENT SYSTEM - FULL BUSINESS LOGIC
+=====================================================================
+
+9.1 Payment model fields
+- reservation, client
+- amount
+- method: CASH | ONLINE
+- status: SUCCESS | FAILED
+- commissionAmount
+- netAmount
+
+9.2 Business role of payment
+- Payment confirms reservation monetarily.
+- Reservation status promotion to CONFIRMEE is tied to successful payment path.
+
+9.3 ONLINE payment flow (POST /api/payments/online, CLIENT)
+Validation sequence:
+1. require reservationId and amount
+2. validate amount > 0
+3. reservation exists
+4. reservation belongs to requesting client
+5. reservation.paymentMethod must be ONLINE
+6. reservation.status must be EN_ATTENTE
+7. ensure no existing SUCCESS payment for same reservation
+8. amount must equal reservation.totalPrice
+
+Execution:
+1. start Mongoose transaction session
+2. simulate payment success (current implementation uses success=true)
+3. calculate commission and net amount
+4. create Payment(status=SUCCESS)
+5. set reservation.status=CONFIRMEE
+6. commit transaction (atomicity between payment creation and status update)
+7. create notifications:
+   - client payment success
+   - owner payment received
+
+9.4 CASH payment flow (PUT /api/payments/cash/:reservationId/confirm, PROPRIETAIRE)
+Validation sequence:
+1. reservation exists
+2. requesting proprietaire owns reservation.property
+3. reservation.paymentMethod must be CASH
+4. reservation.status must be EN_ATTENTE
+
+Execution:
+1. calculate commission from reservation.totalPrice
+2. create Payment(method=CASH, status=SUCCESS)
+3. set reservation.status=CONFIRMEE
+4. notify client that payment was confirmed
+
+9.5 Payment statuses
+- SUCCESS actively used and persisted.
+- FAILED exists in schema and response language, but current ONLINE branch is simulated as success.
+
+9.6 Commission logic
+- Global commission rate stored in Config (default 10%)
+- commissionAmount = round((amount * rate/100), 2 decimals)
+- netAmount = amount - commissionAmount
+
+9.7 Commission administration
+- GET /api/admin/commission
+- PUT /api/admin/commission
+- ADMIN-only control
+
+9.8 Payment query perspectives
+- CLIENT: GET /api/payments/my
+- PROPRIETAIRE: GET /api/payments/received
+  - owner revenue is derived by joining payment->reservation->property ownership
+
+
+=====================================================================
+10) WISHLIST SYSTEM LOGIC
+=====================================================================
+
+10.1 Data model
+- one wishlist per user (user unique)
+- properties array stores references to Property
+
+10.2 Add property
+- POST /api/wishlist/:propertyId (CLIENT only)
+- uses atomic $addToSet
+Business result:
+- property is inserted only if not already present
+- duplicate favorites are prevented natively by MongoDB operator semantics
+
+10.3 Remove property
+- DELETE /api/wishlist/:propertyId
+- uses $pull to remove matching property references
+
+10.4 Read wishlist
+- GET /api/wishlist/me
+- returns populated property data list
+
+10.5 Check membership
+- GET /api/wishlist/check/:propertyId
+- returns boolean inWishlist
+
+
+=====================================================================
+11) REVIEW SYSTEM LOGIC
+=====================================================================
+
+11.1 Data model rules
+- review links reservation + reviewer + property
+- rating range: 1..5
+- reservation has unique=true in Review:
+  - enforces one review per reservation
+
+11.2 Create review (POST /api/reviews, CLIENT)
+Prerequisites:
+1. requester is CLIENT
+2. reservation exists
+3. reservation belongs to requester
+4. reservation status must be CONFIRMEE
+5. no existing review for reservation
+
+Behavior:
+- persist review with rating/comment
+- notification may be generated to relevant party depending on implementation path
+
+11.3 Read reviews
+- GET /api/reviews/property/:propertyId (public)
+  - returns reviews + aggregate average rating
+- GET /api/reviews/me (CLIENT)
+  - returns own authored reviews
+
+11.4 Delete review
+- DELETE /api/reviews/:id
+- allowed for:
+  - review owner (CLIENT)
+  - ADMIN
+
+
+=====================================================================
+12) NOTIFICATIONS AND MESSAGING SUPPORT LOGIC
+=====================================================================
+
+12.1 Notification model
+- type: RESERVATION | PAYMENT | REVIEW | SYSTEM
+- message
+- isRead
+- related object polymorphism via refPath (Reservation/Payment/Review/Property)
+
+12.2 Notification flows (event-driven side effects)
+Triggered by:
+- reservation creation
+- manual reservation cancellation
+- payment success
+- review actions (where implemented)
+
+12.3 Notification APIs
+- GET /api/notifications (with filters/pagination depending on implementation)
+- PUT /api/notifications/:id/read
+- PUT /api/notifications/read-all
+- DELETE /api/notifications/:id
+
+12.4 Messaging rules
+- direct user-to-user chat supported
+- role guard restricts communication to CLIENT <-> PROPRIETAIRE
+- message may optionally be linked to reservation
+- conversation reads can mark incoming messages as read
+
+
+=====================================================================
+13) ADMIN DASHBOARD AND PLATFORM GOVERNANCE
+=====================================================================
+
+13.1 ADMIN dashboard endpoint
+- GET /api/dashboard/admin (ADMIN only)
+
+13.2 Returned business metrics
+- overview:
+  - totalProperties
+  - totalReservations
+  - totalPayments (SUCCESS only)
+  - totalReviews
+- revenue:
+  - totalCommission
+  - totalPlatformRevenue
+- reservation status distribution:
+  - EN_ATTENTE, CONFIRMEE, ANNULEE
+- recent activity:
+  - recent reservations with contextual population
+
+13.3 Operational admin powers currently exposed
+- manage commission rate
+- delete properties (via property delete permission)
+- delete reviews (via review delete permission)
+
+13.4 User management scope
+- current admin-specific user CRUD endpoints are not exposed in the analyzed route set.
+
+
+=====================================================================
+14) ROLE-SPECIFIC DASHBOARD LOGIC
+=====================================================================
+
+14.1 CLIENT dashboard (/api/dashboard/client)
+Business outputs:
+- reservations counters:
+  - total
+  - active (EN_ATTENTE + CONFIRMEE)
+  - completed (CONFIRMEE with dateFin < now)
+  - cancelled
+- payment totals:
+  - total successful payments
+  - totalSpent
+- review count
+- latest reservations list
+
+14.2 PROPRIETAIRE dashboard (/api/dashboard/proprietaire)
+Business outputs:
+- properties:
+  - total, active, inactive
+- reservation load for owned properties:
+  - total, pending, confirmed
+- financial analytics:
+  - net earnings (sum netAmount)
+  - commission paid to platform
+  - gross revenue
+  - payment count
+- review analytics:
+  - average rating
+  - total review count
+- latest reservation activity
+
+
+=====================================================================
+15) COMPLETE CRUD AUTHORIZATION MATRIX (WHO CAN DO WHAT)
+=====================================================================
+
+15.1 User
+- Create: Public (register)
+- Read self: Authenticated user (/auth/me)
+- Update/Delete: not exposed as full generic CRUD in current route set
+- Admin full CRUD users: not exposed in analyzed routes
+
+15.2 Property
+- Create: PROPRIETAIRE
+- Read list/single: Public
+- Update: PROPRIETAIRE (owner only)
+- Delete: PROPRIETAIRE (owner) or ADMIN
+
+15.3 Reservation
+- Create: CLIENT
+- Read own list: CLIENT
+- Read single: CLIENT(owner), PROPRIETAIRE(owner of property), ADMIN
+- Update: dedicated edit not exposed
+- Delete (business cancel): CLIENT(owner)
+
+15.4 Payment
+- Create ONLINE: CLIENT (owner of reservation)
+- Confirm CASH: PROPRIETAIRE (owner of property)
+- Read my payments: CLIENT
+- Read received payments: PROPRIETAIRE
+- Delete/update generic: not exposed
+
+15.5 Review
+- Create: CLIENT (for own CONFIRMEE reservation only, one per reservation)
+- Read property reviews: Public
+- Read own: CLIENT
+- Delete: CLIENT(owner) or ADMIN
+- Update review: not exposed
+
+15.6 Wishlist
+- Create/Add: CLIENT
+- Read: CLIENT
+- Update semantics: add/remove endpoints (array mutation)
+- Delete item: CLIENT
+
+15.7 Notification
+- Read: authenticated owner
+- Update: mark read (owner)
+- Delete: owner
+
+15.8 Message
+- Create: CLIENT/PROPRIETAIRE (pairing constraint applies)
+- Read conversation(s): participants
+- Update: mark read by receiver
+- Delete: not exposed
+
+
+=====================================================================
+16) SECURITY, VALIDATION, AND DATA CONSISTENCY STRATEGY
+=====================================================================
+
+16.1 Input validation strategy
+- Schema-level constraints in Mongoose
+- Controller-level validation for business rules
+- Shared validator utilities for:
+  - numbers/ranges
+  - dates
+  - localization object
+  - image arrays
+  - payment method enum
+  - regex escaping for search safety
+
+16.2 Authentication and authorization controls
+- JWT verification on protected routes
+- role guard middleware for RBAC
+- ownership checks in controllers for resource-level permission
+- account-state checks (isActive, isVerified)
+
+16.3 Rate-limiting controls
+- login limiter
+- register limiter
+- global API limiter (as configured)
+
+16.4 HTTP hardening and API limits
+- CORS restricted by configured frontend origin
+- JSON/urlencoded payload limits (10kb)
+- security response headers set globally
+
+16.5 Consistency mechanisms
+- MongoDB indexes for frequent lookups and uniqueness
+- atomic operators:
+  - $addToSet for duplicate-safe wishlist insertion
+  - $pull for removals
+- transaction used for ONLINE payment + reservation confirmation atomicity
+
+16.6 Referential behavior
+- refs + populate used for joins at read-time
+- cascade delete is not globally enforced
+- hard deletes can leave orphan relations if not manually handled
+
+
+=====================================================================
+17) COMPLETE END-TO-END USER JOURNEY (CLIENT PATH)
+=====================================================================
+
+Step 1 - Account creation
+- User submits registration data.
+- System validates uniqueness + format, saves account, sends verification token.
+
+Step 2 - Email verification
+- User opens verification link.
+- System validates token and activates verified status.
+
+Step 3 - Login
+- User submits credentials.
+- System verifies account state and returns JWT.
+
+Step 4 - Discover properties
+- User calls listing endpoint with filters (location/price/capacity/type).
+- System returns paginated active properties.
+
+Step 5 - Build shortlist
+- User adds favorite properties into wishlist.
+- System prevents duplicates automatically.
+
+Step 6 - Check availability
+- User submits property and date range.
+- System runs overlap query and returns available/unavailable.
+
+Step 7 - Create reservation
+- User submits booking request with dates, guests, payment method.
+- System validates chronology, lead time, capacity, and overlap.
+- Reservation is created as EN_ATTENTE.
+- Owner receives reservation notification.
+
+Step 8A - ONLINE payment path
+- User pays exact reservation total.
+- System creates SUCCESS payment (transaction), computes commission, confirms reservation.
+- Notifications sent to client and owner.
+
+Step 8B - CASH payment path
+- User chooses CASH at booking.
+- Reservation stays EN_ATTENTE until owner confirms.
+- Owner confirms cash via dedicated endpoint.
+- System records SUCCESS payment and confirms reservation.
+
+Step 9 - Auto-cancel guard
+- If reservation remains EN_ATTENTE beyond property delay (24/48h), scheduler auto-cancels.
+
+Step 10 - Stay completion and review
+- For CONFIRMEE reservation, client can submit one review.
+- Rating contributes to property average calculations.
+
+Step 11 - Post-booking visibility
+- Client dashboard shows booking/payment/review stats.
+- Owner dashboard shows reservation pipeline and financial aggregates.
+- Admin dashboard tracks platform-level revenue and activity.
+
+
+=====================================================================
+18) EDGE CASES AND SPECIAL BUSINESS CONDITIONS
+=====================================================================
+
+18.1 Overlapping reservations
+- Prevented by strict interval intersection query on active statuses.
+- Cancelled bookings do not block future reservations.
+
+18.2 Invalid date intervals
+- Rejected when dateDebut >= dateFin.
+- Additional lead-time constraint requires booking start at least 24h ahead.
+
+18.3 Inactive property booking attempts
+- Rejected if property.isActive is false.
+
+18.4 Capacity overflow
+- Rejected when guests exceed property.maxGuests.
+
+18.5 Duplicate wishlist attempts
+- No duplicate insert because $addToSet is idempotent.
+
+18.6 Duplicate payment attempts
+- ONLINE payment creation rejects if SUCCESS payment already exists for reservation.
+
+18.7 Duplicate review attempts
+- Prevented by both explicit controller check and unique index on reservation in Review.
+
+18.8 Unauthorized resource access
+- blocked by role middleware + ownership checks.
+
+18.9 Payment mismatch amount
+- ONLINE flow rejects when request amount != reservation.totalPrice.
+
+18.10 Auto-cancel race window
+- Hourly scheduler means cancellation may occur up to one check interval after exact expiry.
+
+18.11 Hard delete side effects
+- Deleting entities may leave linked documents still present unless separately cleaned.
+
+
+=====================================================================
+19) IMPLEMENTATION GAPS / NON-FUNCTIONAL BUSINESS LIMITS
+=====================================================================
+
+Important for roadmap and PFE discussion:
+
+1) No real online gateway integration
+- ONLINE flow is currently simulated as success.
+
+2) Limited FAILED payment operational handling
+- FAILED exists in schema, but no robust retry/failure orchestration.
+
+3) No automated refund engine
+- cancellation does not reverse successful payment records.
+
+4) No auto-cancel notification dispatch
+- scheduler logs cancellations but does not notify participants.
+
+5) No reservation reschedule/update endpoint
+- reservation is create, read, cancel only.
+
+6) No generalized admin user CRUD API
+- admin controls currently focus on commission and monitoring.
+
+7) Hard deletion policy
+- no soft-delete/audit trail restoration model.
+
+
+=====================================================================
+20) CONCLUSION: REBUILD BLUEPRINT CHECKLIST
+=====================================================================
+
+To rebuild Ren&Go behavior faithfully:
+1. Implement the role model and account states exactly (CLIENT/PROPRIETAIRE/ADMIN, isVerified, isActive).
+2. Reproduce reservation overlap logic and active-status filtering exactly.
+3. Keep reservation lifecycle coupled to payment confirmation states.
+4. Enforce per-property cancellationDelay (24/48h) through background scheduler.
+5. Preserve ownership checks across property, reservation, payment, and review operations.
+6. Preserve wishlist duplicate prevention via atomic set semantics.
+7. Preserve one-review-per-reservation constraint with unique index and controller validation.
+8. Compute and persist commission/net amounts on successful payments.
+9. Expose role-specific dashboards with the same aggregate semantics.
+10. Maintain all validation gates to protect consistency and business integrity.
+
+This blueprint captures the full backend business logic flow from user onboarding to booking, payment, completion, feedback, and platform governance.

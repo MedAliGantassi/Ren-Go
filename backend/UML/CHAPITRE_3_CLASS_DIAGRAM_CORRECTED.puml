@@ -1,0 +1,179 @@
+@startuml CHAPITRE_3_CLASS_DIAGRAM_CORRECTED
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam defaultFontName Arial
+
+title Ren&Go - Diagramme de Classes Corrige
+
+'==================== ENUMS ====================
+enum UserRole {
+  CLIENT
+  PROPRIETAIRE
+  ADMIN
+}
+
+enum ReservationStatus {
+  EN_ATTENTE
+  CONFIRMEE
+  ANNULEE
+}
+
+enum PaymentMethod {
+  CASH
+  ONLINE
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+'==================== CLASSES ====================
+abstract class Utilisateur {
+  -id : ObjectId
+  +name : String
+  +email : String
+  +phone : String
+  +password : String
+  +role : UserRole
+  +isActive : Boolean
+  +isVerified : Boolean
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class Client {
+}
+
+class Proprietaire {
+}
+
+class Admin {
+}
+
+class Property {
+  -id : ObjectId
+  +title : String
+  +description : String
+  +pricePerNight : Number
+  +governorate : String
+  +delegation : String
+  +images : String[]
+  +bedrooms : Number
+  +bathrooms : Number
+  +maxGuests : Number
+  +propertyType : String
+  +isActive : Boolean
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class Reservation {
+  -id : ObjectId
+  +startDate : Date
+  +endDate : Date
+  +guests : Number
+  +totalPrice : Number
+  +status : ReservationStatus
+  +autoCancelAfterHours : Number = 48
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class Payment {
+  -id : ObjectId
+  +amount : Number
+  +method : PaymentMethod
+  +status : PaymentStatus
+  +commissionAmount : Number
+  +netAmount : Number
+  +paidAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class Review {
+  -id : ObjectId
+  +rating : Number
+  +comment : String
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class Wishlist {
+  -id : ObjectId
+  +name : String
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class Config {
+  -id : ObjectId
+  +commissionRate : Number
+  +defaultAutoCancelHours : Number = 48
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+'==================== INHERITANCE ====================
+Utilisateur <|-- Client
+Utilisateur <|-- Proprietaire
+Utilisateur <|-- Admin
+
+'==================== RELATIONSHIPS ====================
+
+' Composition: un proprietaire est responsable du cycle de vie de ses proprietes
+Proprietaire "1" *-- "0..*" Property : possede
+
+' Aggregation: un client possede une wishlist (entite logiquement separee)
+Client "1" o-- "0..1" Wishlist : possede
+
+' Reservation links
+Client "1" --> "0..*" Reservation : reserve
+Property "1" --> "0..*" Reservation : concerne
+
+' Composition: un paiement est rattache a une reservation
+Reservation "1" *-- "0..1" Payment : declenche
+
+' Une reservation peut donner lieu a un seul avis
+Reservation "1" *-- "0..1" Review : genere
+Client "1" --> "0..*" Review : redige
+Property "1" --> "0..*" Review : recoit
+
+' Correction obligatoire: many-to-many entre wishlist et property
+Wishlist "0..*" -- "0..*" Property : contient
+
+' Aggregation administrative
+Admin "1" o-- "0..*" Utilisateur : gere
+Admin "1" o-- "0..*" Property : modere
+Admin "1" o-- "0..*" Reservation : supervise
+Admin "1" o-- "0..*" Payment : surveille
+Admin "1" o-- "0..*" Review : supprime
+
+' Configuration globale
+Config "1" ..> Payment : parametre
+Config "1" ..> Reservation : parametre
+
+'==================== BUSINESS RULES ====================
+note right of Reservation
+  R1: startDate < endDate
+  R2: Interdiction de chevauchement
+      pour une meme propriete
+  R3: Annulation automatique apres 48h
+      si paiement non finalise
+end note
+
+note right of Payment
+  R4: method = CASH ou ONLINE
+end note
+
+note right of Review
+  R5: Un seul avis par reservation
+      (reservation unique dans Review)
+end note
+
+@enduml

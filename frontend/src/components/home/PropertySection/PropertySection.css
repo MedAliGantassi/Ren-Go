@@ -1,0 +1,84 @@
+.property-section {
+  background: #FFF9F1;
+  padding: 80px 0;
+}
+
+.property-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.property-eyebrow {
+  display: inline-block;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #FF5300;
+  background: #fff3ee;
+  padding: 4px 12px;
+  border-radius: 50px;
+  margin-bottom: 10px;
+}
+
+.property-title {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(1.5rem, 2.8vw, 2.1rem);
+  font-weight: 800;
+  color: #1a1a1a;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.property-see-all {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #075545;
+  text-decoration: none;
+  white-space: nowrap;
+  padding-bottom: 4px;
+  transition: opacity 0.2s;
+}
+
+.property-see-all:hover {
+  opacity: 0.75;
+  color: #075545;
+}
+
+/* ── Filter tabs ── */
+.property-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.property-tab {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 8px 20px;
+  border-radius: 50px;
+  border: 1.5px solid #e5e7eb;
+  background: #fff;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.property-tab:hover {
+  border-color: #075545;
+  color: #075545;
+}
+
+.property-tab.active {
+  background: #075545;
+  border-color: #075545;
+  color: #fff;
+  font-weight: 600;
+}

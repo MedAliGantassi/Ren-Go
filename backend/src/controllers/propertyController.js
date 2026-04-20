@@ -60,14 +60,17 @@ const createProperty = async (req, res) => {
       }
       propertyData.type = type;
     }
-    if (cancellationDelay) {
-      if (![24, 48].includes(Number(cancellationDelay))) {
+    if (cancellationDelay !== undefined) {
+      const parsedCancellationDelay = Number(cancellationDelay);
+
+      if (![24, 48].includes(parsedCancellationDelay)) {
         return res.status(400).json({
           success: false,
           message: 'Cancellation delay must be 24 or 48 hours'
         });
       }
-      propertyData.cancellationDelay = Number(cancellationDelay);
+
+      propertyData.cancellationDelay = parsedCancellationDelay;
     }
 
     const property = await Property.create(propertyData);
@@ -206,13 +209,16 @@ const updateProperty = async (req, res) => {
       return res.status(404).json({ message: 'Propriété non trouvée' });
     }
 
-    if (property.owner.toString() !== req.user._id.toString()) {
+    const isOwner = property.owner.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'ADMIN';
+
+    if (!isOwner && !isAdmin) {
       return res.status(403).json({ 
-        message: 'Non autorisé. Vous ne pouvez modifier que vos propres propriétés' 
+        message: 'Non autorisé. Seul le propriétaire ou un admin peut modifier cette propriété'
       });
     }
 
-    const { titre, description, prix, localisation, images, type, isActive } = req.body;
+    const { titre, description, prix, localisation, images, type, isActive, cancellationDelay } = req.body;
     
     const updateData = {};
     if (titre !== undefined) updateData.titre = titre;
@@ -229,6 +235,18 @@ const updateProperty = async (req, res) => {
         });
       }
       updateData.type = type;
+    }
+    if (cancellationDelay !== undefined) {
+      const parsedCancellationDelay = Number(cancellationDelay);
+
+      if (![24, 48].includes(parsedCancellationDelay)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cancellation delay must be 24 or 48 hours'
+        });
+      }
+
+      updateData.cancellationDelay = parsedCancellationDelay;
     }
     if (isActive !== undefined) updateData.isActive = isActive;
 

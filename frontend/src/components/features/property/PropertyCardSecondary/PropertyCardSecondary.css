@@ -1,0 +1,77 @@
+.pcs-card {
+  width: 350px;
+  height: 364px;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0px 8px 32px rgba(7, 85, 69, 0.12);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+
+.pcs-image-wrapper {
+  position: relative;
+  height: 196px;
+  overflow: hidden;
+}
+
+.pcs-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pcs-fav-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: white;
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pcs-fav-icon {
+  width: 18px;
+}
+
+.pcs-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.pcs-title {
+  font-weight: 700;
+}
+
+.pcs-location {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.pcs-meta {
+  display: flex;
+  justify-content: space-between;
+  margin: 10px 0;
+}
+
+.pcs-price-amount {
+  color: #ff5300;
+  font-weight: bold;
+}
+
+.pcs-cta {
+  margin-top: auto;
+  background: #075545;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 10px;
+}

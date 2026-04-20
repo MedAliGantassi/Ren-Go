@@ -61,7 +61,7 @@ const propertySchema = new mongoose.Schema({
   cancellationDelay: {
     type: Number,
     enum: [24, 48],
-    default: 48
+    default: 24
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,

@@ -13,6 +13,7 @@ abstract class Utilisateur <<abstract>> {
   - nom : String
   - email : String
   - motDePasse : String
+  - role : UserRole
   - estActif : Boolean
   - estVerifie : Boolean
   - tokenVerification : String
@@ -145,7 +146,7 @@ Propriete "1" o-- "0..*" Avis : reçoit >
 Client "1" *-- "0..1" Wishlist : possède >
 
 ' Wishlist contient des Propriétés
-Wishlist "1" o-- "0..*" Propriete : contient >
+Wishlist "1..*" o-- "0..*" Propriete : contient >
 
 ' Utilisateur reçoit des Notifications
 Utilisateur "1" o-- "0..*" Notification : reçoit >
