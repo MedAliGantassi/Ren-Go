@@ -4,8 +4,8 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { sendVerificationEmail } = require('../config/email');
 
-const generateToken = (id, role) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET, {
+const generateToken = (id, roles, currentRole) => {
+  return jwt.sign({ id, roles, currentRole }, process.env.JWT_SECRET, {
     expiresIn: '7d'
   });
 };
@@ -41,7 +41,8 @@ const register = async (req, res) => {
       email,
       phone: cleanPhone,
       password,
-      role: role || 'CLIENT'
+      roles: role ? [role] : ['CLIENT'],
+      currentRole: role || 'CLIENT'
     });
 
     const verificationToken = user.generateVerificationToken();
@@ -61,7 +62,8 @@ const register = async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        role: user.role,
+        roles: user.roles,
+        currentRole: user.currentRole,
         isVerified: user.isVerified
       }
     });
@@ -161,7 +163,7 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const token = generateToken(user._id, user.role);
+    const token = generateToken(user._id, user.roles, user.currentRole);
 
     res.status(200).json({
       success: true,
@@ -171,7 +173,8 @@ const login = async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        role: user.role,
+        roles: user.roles,
+        currentRole: user.currentRole,
         isActive: user.isActive,
         isVerified: user.isVerified
       }

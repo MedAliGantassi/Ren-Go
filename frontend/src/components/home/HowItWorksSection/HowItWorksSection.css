@@ -1,97 +1,79 @@
-.testimonials-section {
-  background: #fff;
+.how-section {
+  background: var(--footer-bg, #0a3d2e);
   padding: 90px 0;
+  color: #fff;
+  border-top-left-radius: 40px;
+  border-top-right-radius: 40px;
 }
 
-.testimonials-eyebrow {
+.how-eyebrow {
   display: inline-block;
   font-family: 'Inter', sans-serif;
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   color: #FF5300;
-  background: #fff3ee;
+  background: rgba(255, 83, 0, 0.1);
   padding: 5px 14px;
   border-radius: 50px;
   margin-bottom: 16px;
+  text-transform: uppercase;
 }
 
-.testimonials-title {
+.how-title {
   font-family: 'Inter', sans-serif;
-  font-size: clamp(1.6rem, 3vw, 2.4rem);
-  font-weight: 800;
-  color: #1a1a1a;
-}
-
-/* ── Card ── */
-.testimonial-card {
-  background: #fff;
-  border: 1.5px solid #f0f0f0;
-  border-radius: 16px;
-  padding: 32px;
-  height: 100%;
-  position: relative;
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
-}
-
-.testimonial-quote {
-  display: block;
-  font-size: 2.4rem;
-  color: #e5e7eb;
-  line-height: 1;
-  margin-bottom: 12px;
-  font-family: Georgia, serif;
-}
-
-.testimonial-stars {
-  display: flex;
-  gap: 3px;
-  margin-bottom: 14px;
-}
-
-.star {
-  color: #FF5300;
-  font-size: 1.1rem;
-}
-
-.testimonial-text {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.9rem;
-  color: #374151;
-  line-height: 1.75;
-  margin-bottom: 24px;
-}
-
-.testimonial-author {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.testimonial-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  color: #fff;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.82rem;
+  font-size: clamp(2rem, 3.5vw, 2.5rem);
   font-weight: 700;
+  color: #fff;
+  margin-bottom: 40px;
+}
+
+.how-card {
+  background: rgba(255, 255, 255, 0.05); /* Transparent/darker green effect */
+  border-radius: 16px;
+  padding: 40px 32px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+}
+
+.how-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-8px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+}
+
+.how-number {
+  width: 56px;
+  height: 56px;
+  background: #FF5300;
+  color: #fff;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-}
-
-.testimonial-name {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.88rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: #1a1a1a;
+  margin-bottom: 24px;
 }
 
-.testimonial-role {
+.how-step-title {
   font-family: 'Inter', sans-serif;
-  font-size: 0.78rem;
-  color: #9ca3af;
-  margin-top: 2px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.how-step-desc {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  margin: 0;
 }

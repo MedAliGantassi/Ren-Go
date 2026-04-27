@@ -1,0 +1,133 @@
+.gallery-section-container {
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.gallery-empty {
+  padding: 2rem;
+  background-color: #F7F9F8;
+  border-radius: 16px;
+  text-align: center;
+  color: #075545;
+  font-weight: 500;
+}
+
+.gallery-grid {
+  display: flex;
+  gap: 12px;
+  height: 500px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.gallery-main-image-wrapper {
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.gallery-small-images-container {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 12px;
+  height: 100%;
+}
+
+.gallery-small-image-wrapper {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+}
+
+.gallery-more-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.5rem;
+  transition: background-color 0.3s ease;
+}
+
+.gallery-small-image-wrapper:hover .gallery-more-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.gallery-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.gallery-main-image-wrapper:hover .gallery-image,
+.gallery-small-image-wrapper:hover .gallery-image {
+  transform: scale(1.05);
+}
+
+/* Modal Styles */
+.gallery-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.gallery-modal-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.gallery-modal-image {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.gallery-modal-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: none;
+  border: none;
+  color: #F7F9F8;
+  font-size: 32px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.gallery-modal-close:hover {
+  color: #FF5300;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .gallery-grid {
+    flex-direction: column;
+    height: auto;
+  }
+  
+  .gallery-main-image-wrapper {
+    height: 300px;
+  }
+
+  .gallery-small-images-container {
+    height: 300px;
+  }
+}

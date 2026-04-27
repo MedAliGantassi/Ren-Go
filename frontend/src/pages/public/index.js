@@ -1,2 +1,3 @@
 export { default as HomePage } from './HomePage';
-export { default as PropertyDetailsPage } from './PropertyDetailsPage';
+export { default as PropertyListingPage } from './PropertyListingPage/PropertyListingPage';
+export { default as ContactPage } from './ContactPage/ContactPage';

@@ -1,0 +1,183 @@
+.host-info-card {
+  padding: 0;
+  font-family: inherit;
+}
+
+.host-info-title {
+  font-size: 20px;
+  font-weight: 600; /* Use bold for name */
+  color: #075545; /* Primary */
+  margin: 0 0 8px 0; /* Changed from 16px to not break layout with badges */
+}
+
+.host-info-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem; /* Consistent spacing > 16px */
+}
+
+.host-avatar-wrapper {
+  flex-shrink: 0;
+}
+
+.host-avatar-image {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+}
+
+.host-avatar-placeholder {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #075545, #FF5300); /* Primary to Accent gradient */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.host-details-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem; /* Adjusting gap for clear vertical flow */
+}
+
+.host-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.95rem;
+  color: #4b5563; /* Secondary text */
+}
+
+.host-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.host-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.star-icon {
+  color: #FF5300; /* Accent */
+}
+
+.ribbon-icon {
+  color: #FF5300; /* Accent */
+}
+
+.badge-highlight {
+  color: #075545; /* Dark Green */
+  font-weight: 700;
+}
+
+.badge-text {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.badge-separator {
+  color: #d1d5db;
+  font-weight: 700;
+}
+
+/* Stats Cards */
+.host-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.host-stat-card {
+  background-color: #FFFBF5; /* Soft beige from reference image */
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.host-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+}
+
+.stat-label {
+  font-size: 0.75rem; /* Smaller text for labels */
+  color: #6b7280;
+  font-weight: 500;
+  text-transform: uppercase; /* Clean differentiation */
+  letter-spacing: 0.05em;
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 800; /* Bold for values */
+  color: #075545; /* Primary */
+  line-height: 1;
+}
+
+/* Contact Button */
+.contact-host-btn {
+  align-self: flex-start;
+  margin-top: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background-color: transparent;
+  color: #075545;
+  border: 1.5px solid #075545;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contact-host-btn:hover {
+  background-color: #075545;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(7, 85, 69, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .host-info-content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .host-badges {
+    justify-content: center;
+  }
+  
+  .host-stats-grid {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .host-stat-card {
+    text-align: left;
+    align-items: center; /* Center contents on mobile */
+  }
+
+  .contact-host-btn {
+    align-self: center;
+    width: 100%;
+  }
+}

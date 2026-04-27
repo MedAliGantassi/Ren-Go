@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './PropertyCard.css';
 
 // ── Dynamic badge config ──────────────────────────────────────────
@@ -21,8 +22,10 @@ const ICONS = {
 // ─────────────────────────────────────────────────────────────────
 export default function PropertyCard({ property, onViewDetails }) {
   const [isFavorite, setIsFavorite] = useState(false);
+  const navigate = useNavigate();
 
   const {
+    id,
     title,
     location,
     rating,
@@ -101,7 +104,12 @@ export default function PropertyCard({ property, onViewDetails }) {
           </div>
           <button
             className="pc-cta"
-            onClick={() => onViewDetails?.(property)}
+            onClick={() => {
+              if (onViewDetails) {
+                onViewDetails(property);
+              }
+              navigate(`/properties/${id}`);
+            }}
           >
             Voir détails
           </button>

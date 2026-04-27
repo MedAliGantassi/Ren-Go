@@ -1,0 +1,168 @@
+/* ─────────────────────────────────────────────────────────────
+   Ren&Go — PropertyCardSecondary
+   Figma: 350px × 364px · radius 20px · shadow rgba(7,85,69,.12)
+   ───────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ── Card shell ──────────────────────────────────────────────── */
+.pcs-card {
+  font-family: 'Inter', sans-serif;
+  width: 350px;
+  height: 364px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0px 8px 32px rgba(7, 85, 69, 0.12);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  position: relative;
+  /* transition handled by Framer Motion */
+}
+
+/* ── Image wrapper ───────────────────────────────────────────── */
+.pcs-image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 196px;      /* ~54% of 364px card height */
+  overflow: hidden;
+  flex-shrink: 0;
+  border-radius: 20px 20px 0 0;
+}
+
+.pcs-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  /* scale animation handled by Framer Motion */
+}
+
+/* ── Favorite button ─────────────────────────────────────────── */
+.pcs-fav-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 38px;
+  height: 38px;
+  background: #ffffff;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
+  padding: 0;
+  z-index: 2;
+  /* hover/tap handled by Framer Motion */
+}
+
+.pcs-fav-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+/* Active state: subtle ring */
+.pcs-fav-btn--active {
+  box-shadow: 0 2px 10px rgba(220, 38, 38, 0.2);
+}
+
+/* ── Body ────────────────────────────────────────────────────── */
+.pcs-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px 18px;
+  flex: 1;
+}
+
+/* ── Title ───────────────────────────────────────────────────── */
+.pcs-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Location ────────────────────────────────────────────────── */
+.pcs-location {
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: #6b7280;
+  margin: 0 0 8px;
+}
+
+/* ── Rating + Price row ──────────────────────────────────────── */
+.pcs-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.pcs-rating {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.pcs-star {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+}
+
+.pcs-price {
+  display: flex;
+  align-items: baseline;
+}
+
+.pcs-price-amount {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #FF5300;
+}
+
+.pcs-price-unit {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: #9ca3af;
+}
+
+/* ── CTA button ──────────────────────────────────────────────── */
+.pcs-cta {
+  width: 100%;
+  background-color: #075545;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  margin-top: auto;
+  /* color/scale transitions handled by Framer Motion */
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .pcs-card {
+    width: 100%;
+    height: auto;
+  }
+
+  .pcs-image-wrapper {
+    height: 200px;
+  }
+}

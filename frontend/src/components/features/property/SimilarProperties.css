@@ -1,0 +1,35 @@
+.similar-properties {
+  margin-top: 48px;
+}
+
+.similar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  justify-items: start;
+}
+
+.similar-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #075545;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  margin: 0 0 16px 0;
+}
+
+.similar-title:hover {
+  text-decoration: underline;
+}
+
+.arrow {
+  font-size: 18px;
+  transition: transform 0.2s ease;
+}
+
+.similar-title:hover .arrow {
+  transform: translateX(4px);
+}

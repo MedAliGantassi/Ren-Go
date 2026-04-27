@@ -1,0 +1,89 @@
+.property-details-page {
+  background-color: #ffffff;
+  min-height: 100vh;
+  padding: 2rem 0 6rem; /* extra padding on bottom for mobile action-bar */
+  font-family: inherit;
+}
+
+.property-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Base Top Alignment */
+.property-details-top {
+  margin-bottom: 2rem;
+}
+
+/* Multi-Column Grid System */
+.property-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 40px;
+  align-items: start;
+}
+
+/* Left Sidebar Array */
+.left-column {
+  width: 100%;
+}
+
+.page-divider {
+  width: 100%;
+  height: 1px;
+  background-color: #e5e7eb;
+  margin: 32px 0; /* Separates the modules consistently instead of editing modules */
+}
+
+/* Right Fixed Sidebar */
+.right-column {
+  width: 380px;
+  position: relative;
+}
+
+.sticky-sidebar-wrapper {
+  position: sticky;
+  top: 100px; /* Buffer for global header dropdowns */
+  margin-bottom: 2rem;
+}
+
+/* Bottom Anchor */
+.property-details-bottom {
+  margin-top: 4rem;
+}
+
+/* Responsive / Stack Architecture Constraints */
+@media (max-width: 1024px) {
+  .property-layout {
+    gap: 30px;
+    grid-template-columns: 1fr 340px; /* Compress right column slightly on smaller screens */
+  }
+  .right-column {
+    width: 340px;
+  }
+}
+
+@media (max-width: 900px) {
+  /* Complete stack pivot */
+  .property-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .right-column {
+    width: 100%;
+    margin-top: 2rem;
+    order: 0;
+  }
+  
+  .sticky-sidebar-wrapper {
+    position: relative;
+    top: 0;
+  }
+
+  .property-details-top {
+    margin-bottom: 1rem;
+  }
+}
